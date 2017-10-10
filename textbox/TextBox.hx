@@ -217,6 +217,8 @@ class TextBox {
 		if (selecting) {
 			selectionEnd = cursorIndex;
 		}
+
+		scrollToCaret();
 	}
 
 	function doRightOperation()
@@ -249,6 +251,7 @@ class TextBox {
 		if (selecting) {
 			selectionEnd = cursorIndex;
 		}
+		scrollToCaret();
 	}
 
 	function doDownOperation()
@@ -283,6 +286,8 @@ class TextBox {
 			if (selecting)
 				selectionEnd = cursorIndex;
 		}
+
+		scrollToCaret();
 	}
 
 	function doUpOperation()
@@ -477,18 +482,23 @@ class TextBox {
 	function scrollToCaret()
 	{
 		var line = findCursorLine();
-		var lastBreak = line > 0 ? breaks[line - 1] : 0;
-		var cursorX = font.widthOfCharacters(fontSize, characters, lastBreak, cursorIndex - lastBreak);
+		var maxOfLines = Math.floor(h / font.height(fontSize));
+		var topLine = Std.int((scrollOffset / font.height(fontSize)));
+		var bottomLine = topLine + maxOfLines - 1;
 
-		var caretPosX = x + margin + cursorX;
-		var caretPosY = y + margin + font.height(fontSize) * line - scrollOffset;
-
-		if (caretPosY < y + scrollOffset)
+		if (line > bottomLine)
 		{
-			scrollOffset += caretPosY - y;
-			if (scrollOffset < 0)
-				scrollOffset = 0;
+			scrollOffset += font.height(fontSize) * 5;
 		}
+		else if (line < topLine)
+		{
+			scrollOffset -= font.height(fontSize) * 5;
+		}
+
+		if (scrollOffset > scrollBottom)
+			scrollOffset = scrollBottom;
+		else if (scrollOffset < 0)
+			scrollOffset = 0;
 	}
 
 	function scroll()

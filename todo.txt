@@ -7,7 +7,7 @@ Common hotkey implementations, including Ctrl+C, Ctrl+V, and Ctrl+X, for copy, p
 - Holding Ctrl with arrow keys should increase caret index on a per word basis.
 - Word-wrapping functionality
 - key-repeat
-Make the textbox scroll to where the caret is when typing.
+- Make the textbox scroll to where the caret is lands.
 
 ### Issues ###
 Don't make unneccessary `drawCharacter` calls if the text to render is outside the range of the TextBox. (efficiency)
