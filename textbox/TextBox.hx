@@ -14,6 +14,8 @@ class TextBox {
 	var _mouseX: Int;
 	var _mouseY: Int;
 	var _mouse: Mouse;
+	var _dt: Float;
+	var _lastTime: Float;
 
 	public var x: Float;
 	public var y: Float;
@@ -47,6 +49,11 @@ class TextBox {
 	var isMouseOverScrollBar: Bool;
 	var isMouseDownScrollBar: Bool;
 
+	var keyCodeDown: Int;
+	var repeatInterval: Int;
+	var repeat: Int;
+	var repeatDelay: Float;
+
 	static var scrollBarWidth = 25;
 
 	public function new(x: Float, y: Float, w: Float, h: Float, font: Font, fontSize: Int) {
@@ -61,6 +68,8 @@ class TextBox {
 		anim = 0;
 		characters = [];
 		beginScrollOver = false;
+		repeat = 0;
+		repeatInterval = 2;
 		// cursorIndexCache = [];
 		breaks = [];
 		disableInsert = showEditingCursor = wordSelection = selecting = false;
@@ -88,6 +97,8 @@ class TextBox {
 		#end
 
 		format();
+
+		_lastTime = System.time;
 	}
 
 	public function setText(value:String)
@@ -176,133 +187,185 @@ class TextBox {
 		}
 	}
 
+	function doLeftOperation()
+	{
+		if (wordSelection)
+		{
+			var offset = 0;
+			var startIndex = cursorIndex;
+			var nextCharIndex = getNextCharacter(-1);
+			var endIndex = getStartOfWord();
+			if (endIndex < nextCharIndex)
+				cursorIndex = endIndex;
+			else
+			{
+				offset = nextCharIndex - endIndex;
+				if (offset < 0)
+					offset = -offset;
+				else
+					offset += 1;
+				
+				cursorIndex = getStartOfWord(offset);
+			}
+		}
+		else
+			--cursorIndex;
+		
+		if (cursorIndex < 0) {
+			cursorIndex = 0;
+		}
+		if (selecting) {
+			selectionEnd = cursorIndex;
+		}
+	}
+
+	function doRightOperation()
+	{
+		if (wordSelection)
+		{
+			var offset = 0;
+			var startIndex = cursorIndex;
+			var nextCharIndex = getNextCharacter();
+			var endIndex = getEndOfWord();
+			if (endIndex > nextCharIndex)
+				cursorIndex = endIndex;
+			else
+			{
+				offset = endIndex - nextCharIndex;
+				if (offset < 0)
+					offset = -offset;
+				else
+					offset += 1;
+				
+				cursorIndex = getEndOfWord(offset);
+			}
+		}
+		else
+			++cursorIndex;
+		
+		if (cursorIndex > characters.length) {
+			cursorIndex = characters.length;
+		}
+		if (selecting) {
+			selectionEnd = cursorIndex;
+		}
+	}
+
+	function doDownOperation()
+	{
+		if (wordSelection)
+			return;
+
+		var line = findCursorLine();
+		var lastBreak = line > 0 ? breaks[line - 1] : 0;
+		var cursorX = font.widthOfCharacters(fontSize, characters, lastBreak, cursorIndex - lastBreak);
+		if (breaks.length > line) {
+			var newBreak = breaks[line];
+			var nextBreak = breaks.length > line + 2 ? breaks[line + 1] : characters.length;
+			for (index in newBreak...nextBreak) {
+				var newX = font.widthOfCharacters(fontSize, characters, newBreak, index - newBreak);
+				if (newX >= cursorX) {
+					cursorIndex = index;
+					if (selecting) {
+						selectionEnd = cursorIndex;
+					}
+					return;
+				}
+			}
+			cursorIndex = nextBreak;
+			if (selecting) {
+				selectionEnd = cursorIndex;
+			}
+		}
+		else
+		{
+			cursorIndex = characters.length;
+			if (selecting)
+				selectionEnd = cursorIndex;
+		}
+	}
+
+	function doUpOperation()
+	{
+		if (wordSelection)
+			return;
+		
+		var line = findCursorLine();
+		var lastBreak = line > 0 ? breaks[line - 1] : 0;
+		var cursorX = font.widthOfCharacters(fontSize, characters, lastBreak, cursorIndex - lastBreak);
+		if (line > 0) {
+			var newBreak = line > 1 ? breaks[line - 2] : 0;
+			var nextBreak = lastBreak;
+			for (index in newBreak...nextBreak) {
+				var newX = font.widthOfCharacters(fontSize, characters, newBreak, index - newBreak);
+				if (newX >= cursorX) {
+					cursorIndex = index;
+					if (selecting) {
+						selectionEnd = cursorIndex;
+					}
+					return;
+				}
+			}
+			cursorIndex = nextBreak;
+			if (selecting) {
+				selectionEnd = cursorIndex;
+			}
+		}
+		else
+		{
+			cursorIndex = 0;
+			if (selecting)
+				selectionEnd = cursorIndex;
+		}
+
+		scrollToCaret();
+	}
+
+	function doBackspaceOperation()
+	{
+		if (selectionStart > -1 && selectionEnd > -1)
+			removeSelection();
+		else
+		{
+			characters.splice(cursorIndex - 1, 1);
+			--cursorIndex;
+			if (cursorIndex < 0)
+				cursorIndex = 0;
+		}
+	}
+
+	function doDeleteOperation()
+	{
+		if (cursorIndex > characters.length - 1)
+			return;
+		else
+		{
+			if (selectionStart > -1 && selectionEnd > -1)
+				removeSelection();
+			else
+			{
+				if (cursorIndex == 0)
+					characters.splice(0, 1);
+				else
+					characters.splice(cursorIndex, 1);
+			}
+		}
+	}
+
 	function keyDown(code: KeyCode): Void {
 		if (!isActive)
 			return;
-
+		
+		keyCodeDown = code;
 		switch (code) {
 			case Left:
-				if (wordSelection)
-				{
-					var offset = 0;
-					var startIndex = cursorIndex;
-					var nextCharIndex = getNextCharacter(-1);
-					var endIndex = getStartOfWord();
-					if (endIndex < nextCharIndex)
-						cursorIndex = endIndex;
-					else
-					{
-						offset = nextCharIndex - endIndex;
-						if (offset < 0)
-							offset = -offset;
-						else
-							offset += 1;
-						
-						cursorIndex = getStartOfWord(offset);
-					}
-				}
-				else
-					--cursorIndex;
-				
-				if (cursorIndex < 0) {
-					cursorIndex = 0;
-				}
-				if (selecting) {
-					selectionEnd = cursorIndex;
-				}
+				doLeftOperation();
 			case Right:
-				if (wordSelection)
-				{
-					var offset = 0;
-					var startIndex = cursorIndex;
-					var nextCharIndex = getNextCharacter();
-					var endIndex = getEndOfWord();
-					if (endIndex > nextCharIndex)
-						cursorIndex = endIndex;
-					else
-					{
-						offset = endIndex - nextCharIndex;
-						if (offset < 0)
-							offset = -offset;
-						else
-							offset += 1;
-						
-						cursorIndex = getEndOfWord(offset);
-					}
-				}
-				else
-					++cursorIndex;
-				
-				if (cursorIndex > characters.length) {
-					cursorIndex = characters.length;
-				}
-				if (selecting) {
-					selectionEnd = cursorIndex;
-				}
+				doRightOperation();
 			case Down:
-				if (wordSelection)
-					return;
-
-				var line = findCursorLine();
-				var lastBreak = line > 0 ? breaks[line - 1] : 0;
-				var cursorX = font.widthOfCharacters(fontSize, characters, lastBreak, cursorIndex - lastBreak);
-				if (breaks.length > line) {
-					var newBreak = breaks[line];
-					var nextBreak = breaks.length > line + 2 ? breaks[line + 1] : characters.length;
-					for (index in newBreak...nextBreak) {
-						var newX = font.widthOfCharacters(fontSize, characters, newBreak, index - newBreak);
-						if (newX >= cursorX) {
-							cursorIndex = index;
-							if (selecting) {
-								selectionEnd = cursorIndex;
-							}
-							return;
-						}
-					}
-					cursorIndex = nextBreak;
-					if (selecting) {
-						selectionEnd = cursorIndex;
-					}
-				}
-				else
-				{
-					cursorIndex = characters.length;
-					if (selecting)
-						selectionEnd = cursorIndex;
-				}
+				doDownOperation();
 			case Up:
-				if (wordSelection)
-					return;
-				
-				var line = findCursorLine();
-				var lastBreak = line > 0 ? breaks[line - 1] : 0;
-				var cursorX = font.widthOfCharacters(fontSize, characters, lastBreak, cursorIndex - lastBreak);
-				if (line > 0) {
-					var newBreak = line > 1 ? breaks[line - 2] : 0;
-					var nextBreak = lastBreak;
-					for (index in newBreak...nextBreak) {
-						var newX = font.widthOfCharacters(fontSize, characters, newBreak, index - newBreak);
-						if (newX >= cursorX) {
-							cursorIndex = index;
-							if (selecting) {
-								selectionEnd = cursorIndex;
-							}
-							return;
-						}
-					}
-					cursorIndex = nextBreak;
-					if (selecting) {
-						selectionEnd = cursorIndex;
-					}
-				}
-				else
-				{
-					cursorIndex = 0;
-					if (selecting)
-						selectionEnd = cursorIndex;
-				}
-
-				scrollToCaret();
+				doUpOperation();
 			case Shift:
 				if (selectionStart == -1 && selectionEnd == -1)
 					selectionStart = selectionEnd = cursorIndex;
@@ -319,6 +382,8 @@ class TextBox {
 		if (!isActive)
 			return;
 
+		keyCodeDown = -1;
+
 		switch (code) {
 			case Shift:
 				selecting = false;
@@ -326,30 +391,9 @@ class TextBox {
 				if (!selecting)
 					selectionStart = selectionEnd = -1;
 			case Backspace:
-				if (selectionStart > -1 && selectionEnd > -1)
-					removeSelection();
-				else
-				{
-					characters.splice(cursorIndex - 1, 1);
-					--cursorIndex;
-					if (cursorIndex < 0)
-						cursorIndex = 0;
-				}
+				doBackspaceOperation();
 			case Delete:
-				if (cursorIndex > characters.length - 1)
-					return;
-				else
-				{
-					if (selectionStart > -1 && selectionEnd > -1)
-						removeSelection();
-					else
-					{
-						if (cursorIndex == 0)
-							characters.splice(0, 1);
-						else
-							characters.splice(cursorIndex, 1);
-					}
-				}
+				doDeleteOperation();
 			case Control:
 				wordSelection = false;
 				disableInsert = false;
@@ -589,10 +633,17 @@ class TextBox {
 		if (!isActive)
 			return;
 
+		var char = character.charCodeAt(0);
+		insertCharacter(char);
+		keyCodeDown = char;
+	}
+
+	function insertCharacter(char: Int)
+	{
 		if (!disableInsert)
 		{
 			anim = 0;
-			characters.insert(cursorIndex, character.charCodeAt(0));
+			characters.insert(cursorIndex, char);
 			++cursorIndex;
 			format();
 		}
@@ -646,6 +697,7 @@ class TextBox {
 
 	public function update(): Void {
 		++anim;
+		++repeat;
 	}
 
 	function findLine(index: Int): Int {
@@ -680,10 +732,45 @@ class TextBox {
 	}
 
 	public function render(g: Graphics): Void {
+		_dt = System.time - _lastTime;
+
 		g.color = Color.White;
 		g.fillRect(x, y, w, h);
 		g.color = Color.Black;
 		g.drawRect(x, y, w, h);
+
+		if (keyCodeDown > -1)
+		{
+			repeatDelay += _dt;
+			if (repeatDelay >= 0.5)
+			{
+				if (Std.int(repeat / repeatInterval) % 2 == 0 && isActive)
+				{
+					var code = keyCodeDown;
+					anim = 0;
+					switch (code)
+					{
+						case Left:
+							doLeftOperation();
+						case Right:
+							doRightOperation();
+						case Up:
+							doUpOperation();
+						case Down:
+							doDownOperation();
+						case Delete:
+							doDeleteOperation();
+						case Backspace:
+							doBackspaceOperation();
+						default:
+							if (isChar(keyCodeDown))
+								insertCharacter(keyCodeDown);
+					}
+				}
+			}
+		}
+		else
+			repeatDelay = 0;
 
 		g.scissor(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
 
@@ -776,5 +863,7 @@ class TextBox {
 
 		g.color = scrollFillColor;
 		g.fillRect(x + w - scrollBarWidth, y, scrollBarWidth, h / 2);
+
+		_lastTime = System.time;
 	}
 }

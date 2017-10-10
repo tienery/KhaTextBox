@@ -6,7 +6,8 @@ Common hotkey implementations, including Ctrl+C, Ctrl+V, and Ctrl+X, for copy, p
   * CTRL+D to deselect (@tienery assigned)
 - Holding Ctrl with arrow keys should increase caret index on a per word basis.
 - Word-wrapping functionality
-key-repeat
+- key-repeat
+Make the textbox scroll to where the caret is when typing.
 
 ### Issues ###
 Don't make unneccessary `drawCharacter` calls if the text to render is outside the range of the TextBox. (efficiency)
