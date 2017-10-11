@@ -864,7 +864,7 @@ class TextBox {
                 size = 1;
             }
             if (size % .5 != size) {
-                size = Std.int(size) - .5;
+                size = Std.int(size) + .5;
             }
 
 			var left = _mouseX - size;
