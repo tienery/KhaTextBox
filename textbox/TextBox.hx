@@ -859,9 +859,16 @@ class TextBox {
 			var fontHeight = font.height(fontSize);
 			var top = _mouseY - fontHeight / 2;
 			var bottom = _mouseY + fontHeight / 2;
-			var left = _mouseX - 3.5;
-			var right = _mouseX + 3.5;
+            var size = fontHeight / 8;
+            if (size < 1) {
+                size = 1;
+            }
+            if (size % .5 != size) {
+                size = Std.int(size) - .5;
+            }
 
+			var left = _mouseX - size;
+			var right = _mouseX + size;
 			g.color = Color.Black;
 			g.drawLine(_mouseX, top, _mouseX, bottom);
 			g.drawLine(left, top, right, top);
