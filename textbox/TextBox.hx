@@ -742,7 +742,7 @@ class TextBox {
 			++index;
             if (totalWidth >= x - margin) {
                 var delta = totalWidth - (x - margin);
-                if (Std.int(delta) >= Std.int(charWidth / 2)) {
+                if (Math.round(delta) >= Math.round(charWidth / 2)) {
                     --index;
                 }
                 break;
