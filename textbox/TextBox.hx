@@ -735,8 +735,18 @@ class TextBox {
 		}
 		var breakIndex = line > 0 ? breaks[line - 1] : 0;
 		var index = breakIndex;
-		while (index < characters.length && font.widthOfCharacters(fontSize, characters, breakIndex, index - breakIndex) < x - margin) {
+        var totalWidth:Float = 0;
+		while (index < characters.length) {
+            var charWidth = font.widthOfCharacters(fontSize, characters, index, 1);
+            totalWidth += charWidth;
 			++index;
+            if (totalWidth >= x - margin) {
+                var delta = totalWidth - (x - margin);
+                if (Std.int(delta) >= Std.int(charWidth / 2)) {
+                    --index;
+                }
+                break;
+            }
 		}
 		return index;
 	}
