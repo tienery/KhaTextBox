@@ -516,6 +516,8 @@ class TextBox
 				moveScrollBar(y);
 				if (x >= this.x + this.w - scrollBarWidth)
 					isMouseOverScrollBar = true;
+				else
+					isMouseOverScrollBar = false;
 			}
 			else if (mouseButtonDown && selectionStart >= 0 && x >= this.x && x <= this.x + this.w - scrollBarWidth) 
 			{
@@ -818,6 +820,9 @@ class TextBox
 				scrollBarCurrentY = this.y;
 			else if (scrollBarCurrentY > this.h / 2 + this.y)
 				scrollBarCurrentY = this.h / 2 + this.y;
+			
+			var percent = (scrollBarCurrentY - this.y) / (this.h / 2);
+			scrollOffset = percent * scrollBottom;
 		}
 	}
 
