@@ -118,6 +118,7 @@ class TextBox
 		selectionStart = selectionEnd = -1;
 		Keyboard.get().notify(keyDown, keyUp, keyPress);
 		mouseButtonDown = false;
+		keyCodeDown = -1;
 		_mouse = Mouse.get();
 		_mouse.notify(mouseDown, mouseUp, mouseMove, mouseWheel, null);
 
