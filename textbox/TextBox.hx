@@ -2,6 +2,7 @@ package textbox;
 
 import kha.Color;
 import kha.Font;
+import kha.Scheduler;
 import kha.graphics2.Graphics;
 import kha.input.KeyCode;
 import kha.input.Keyboard;
@@ -50,12 +51,13 @@ class TextBox {
 	var isMouseDownScrollBar: Bool;
 
 	var keyCodeDown: Int;
-	var repeatInterval: Int;
-	var repeat: Int;
-	var repeatDelay: Float;
 
 	static var scrollBarWidth = 25;
 
+    public var textColor:Int = -1;
+    public var highlightColor:Int = -1;
+    public var highlightTextColor:Int = -1;
+    
 	public function new(x: Float, y: Float, w: Float, h: Float, font: Font, fontSize: Int) {
 		this.x = x;
 		this.y = y;
@@ -68,8 +70,6 @@ class TextBox {
 		anim = 0;
 		characters = [];
 		beginScrollOver = false;
-		repeat = 0;
-		repeatInterval = 2;
 		// cursorIndexCache = [];
 		breaks = [];
 		disableInsert = showEditingCursor = wordSelection = selecting = false;
@@ -99,8 +99,33 @@ class TextBox {
 		format();
 
 		_lastTime = System.time;
+        
+        if (textColor == -1) {
+            textColor = Color.Black;
+        }
+        if (highlightColor == -1) {
+            highlightColor = 0xFF3390FF;
+        }
+        if (highlightTextColor == -1) {
+            highlightTextColor = Color.White;
+        }
 	}
 
+    private var _useScrollBar:Bool = true;
+    public var useScrollBar(get, set):Bool;
+    private function get_useScrollBar():Bool {
+        return _useScrollBar;
+    }
+    private function set_useScrollBar(value:Bool):Bool {
+        _useScrollBar = value;
+        if (value == true) {
+            scrollBarWidth = 25;
+        } else {
+            scrollBarWidth = 0;
+        }
+        return value;
+    }
+    
 	public function setText(value:String)
 	{
 		characters = value.toCharArray();
@@ -357,20 +382,54 @@ class TextBox {
 		}
 	}
 
+    private var _repeatTimerId:Int;
+    private function repeatTimer() {
+		if (keyCodeDown > -1)
+		{
+            if (isActive)
+            {
+                var code = keyCodeDown;
+                anim = 0;
+                switch (code)
+                {
+                    case Left:
+                        doLeftOperation();
+                    case Right:
+                        doRightOperation();
+                    case Up:
+                        doUpOperation();
+                    case Down:
+                        doDownOperation();
+                    case Delete:
+                        doDeleteOperation();
+                    case Backspace:
+                        doBackspaceOperation();
+                    default:
+                        if (isChar(keyCodeDown))
+                            insertCharacter(keyCodeDown);
+                }
+            }
+		}
+    }
+
 	function keyDown(code: KeyCode): Void {
 		if (!isActive)
 			return;
 		
 		keyCodeDown = code;
 		switch (code) {
-			case Left:
-				doLeftOperation();
-			case Right:
-				doRightOperation();
-			case Down:
-				doDownOperation();
-			case Up:
-				doUpOperation();
+            case Left:
+                doLeftOperation();
+            case Right:
+                doRightOperation();
+            case Up:
+                doUpOperation();
+            case Down:
+                doDownOperation();
+            case Delete:
+                doDeleteOperation();
+            case Backspace:
+                doBackspaceOperation();
 			case Shift:
 				if (selectionStart == -1 && selectionEnd == -1)
 					selectionStart = selectionEnd = cursorIndex;
@@ -381,6 +440,13 @@ class TextBox {
 				disableInsert = true;
 			default:
 		}
+        
+        Scheduler.removeTimeTask(_repeatTimerId);
+        Scheduler.addTimeTaskToGroup(1234, function() { // 1234 is the group, seems as good as any group id
+            if (keyCodeDown != -1) {
+                _repeatTimerId = Scheduler.addTimeTask(repeatTimer, 0, 1 / 20);
+            }
+        }, 1 / 5);
 	}
 
 	function keyUp(code: KeyCode): Void {
@@ -388,22 +454,21 @@ class TextBox {
 			return;
 
 		keyCodeDown = -1;
-
+        Scheduler.removeTimeTasks(1234);
+        
 		switch (code) {
 			case Shift:
 				selecting = false;
 			case Left, Right, Up, Down:
 				if (!selecting)
 					selectionStart = selectionEnd = -1;
-			case Backspace:
-				doBackspaceOperation();
-			case Delete:
-				doDeleteOperation();
 			case Control:
 				wordSelection = false;
 				disableInsert = false;
 			default:
 		}
+        
+        Scheduler.removeTimeTask(_repeatTimerId);
 	}
 
 	function mouseDown(button: Int, x: Int, y: Int): Void {
@@ -694,6 +759,11 @@ class TextBox {
 	{
 		var scrollMax = (breaks.length + 1) * font.height(fontSize);
 		scrollBottom = (scrollMax) - h + margin;
+        
+        if (useScrollBar == false) {
+            return;
+        }
+        
 		if (scrollMax < h)
 		{
 			scrollBarWidth = 0;
@@ -707,7 +777,6 @@ class TextBox {
 
 	public function update(): Void {
 		++anim;
-		++repeat;
 	}
 
 	function findLine(index: Int): Int {
@@ -735,8 +804,18 @@ class TextBox {
 		}
 		var breakIndex = line > 0 ? breaks[line - 1] : 0;
 		var index = breakIndex;
-		while (index < characters.length && font.widthOfCharacters(fontSize, characters, breakIndex, index - breakIndex) < x - margin) {
+        var totalWidth:Float = 0;
+		while (index < characters.length) {
+            var charWidth = font.widthOfCharacters(fontSize, characters, index, 1);
+            totalWidth += charWidth;
 			++index;
+            if (totalWidth >= x - margin) {
+                var delta = totalWidth - (x - margin);
+                if (Math.round(delta) >= Math.round(charWidth / 2)) {
+                    --index;
+                }
+                break;
+            }
 		}
 		return index;
 	}
@@ -748,39 +827,6 @@ class TextBox {
 		g.fillRect(x, y, w, h);
 		g.color = Color.Black;
 		g.drawRect(x, y, w, h);
-
-		if (keyCodeDown > -1)
-		{
-			repeatDelay += _dt;
-			if (repeatDelay >= 0.5)
-			{
-				if (Std.int(repeat / repeatInterval) % 2 == 0 && isActive)
-				{
-					var code = keyCodeDown;
-					anim = 0;
-					switch (code)
-					{
-						case Left:
-							doLeftOperation();
-						case Right:
-							doRightOperation();
-						case Up:
-							doUpOperation();
-						case Down:
-							doDownOperation();
-						case Delete:
-							doDeleteOperation();
-						case Backspace:
-							doBackspaceOperation();
-						default:
-							if (isChar(keyCodeDown))
-								insertCharacter(keyCodeDown);
-					}
-				}
-			}
-		}
-		else
-			repeatDelay = 0;
 
 		g.scissor(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
 
@@ -800,6 +846,7 @@ class TextBox {
 			var endX = font.widthOfCharacters(fontSize, characters, endBreak, endIndex - endBreak);
 			//g.fillRect(x + margin + startX, y + margin + startLine * font.height(fontSize), 200, (endLine - startLine + 1) * font.height(fontSize));
 			
+    		g.color = highlightColor;
 			for (line in startLine...endLine + 1) {
 				var x1 = x + margin;
 				if (line == startLine) {
@@ -809,27 +856,26 @@ class TextBox {
 				if (line == endLine) {
 					x2 = x + margin + endX;
 				}
-				g.color = Color.fromFloats(.5, .5, 1);
 				g.fillRect(x1, y + margin + line * font.height(fontSize) - scrollOffset, x2 - x1, font.height(fontSize));
 			}
 		}
 
-		g.color = Color.Black;
+		g.color = textColor;
 		g.font = font;
 		g.fontSize = fontSize;
 
 		if (breaks.length == 0) {
 			g.drawCharacters(characters, 0, characters.length, x + margin, y + margin);
-		}
-		else {
+		} else { 
 			var line = 0;
 			var lastBreak = 0;
 			for (lineBreak in breaks) {
-				g.drawCharacters(characters, lastBreak, lineBreak - lastBreak, x + margin, y + margin + line * font.height(fontSize) - scrollOffset);
+                renderLine(g, characters, lastBreak, lineBreak - lastBreak, x + margin, y + margin, line);
+                
 				lastBreak = lineBreak;
 				++line;
 			}
-			g.drawCharacters(characters, lastBreak, characters.length - lastBreak, x + margin, y + margin + line * font.height(fontSize) - scrollOffset);
+            renderLine(g, characters, lastBreak, characters.length - lastBreak, x + margin, y + margin, line);
 		}
 		
 		if (Std.int(anim / 20) % 2 == 0 && isActive) {
@@ -849,9 +895,16 @@ class TextBox {
 			var fontHeight = font.height(fontSize);
 			var top = _mouseY - fontHeight / 2;
 			var bottom = _mouseY + fontHeight / 2;
-			var left = _mouseX - 3.5;
-			var right = _mouseX + 3.5;
+            var size = fontHeight / 8;
+            if (size < 1) {
+                size = 1;
+            }
+            if (size % .5 != size) {
+                size = Std.int(size) + .5;
+            }
 
+			var left = _mouseX - size;
+			var right = _mouseX + size;
 			g.color = Color.Black;
 			g.drawLine(_mouseX, top, _mouseX, bottom);
 			g.drawLine(left, top, right, top);
@@ -862,18 +915,90 @@ class TextBox {
 
 		g.disableScissor();
 
-		g.color = Color.fromBytes(40, 40, 40);
-		g.fillRect(x + w - scrollBarWidth, y, scrollBarWidth, h);
+        if (useScrollBar == true) {
+            g.color = Color.fromBytes(40, 40, 40);
+            g.fillRect(x + w - scrollBarWidth, y, scrollBarWidth, h);
 
-		var scrollFillColor = Color.fromBytes(80, 80, 80);
-		if (isMouseDownScrollBar)
-			scrollFillColor = Color.fromBytes(20, 20, 20);
-		else if (isMouseOverScrollBar)
-			scrollFillColor = Color.fromBytes(150, 150, 150);
+            var scrollFillColor = Color.fromBytes(80, 80, 80);
+            if (isMouseDownScrollBar)
+                scrollFillColor = Color.fromBytes(20, 20, 20);
+            else if (isMouseOverScrollBar)
+                scrollFillColor = Color.fromBytes(150, 150, 150);
 
-		g.color = scrollFillColor;
-		g.fillRect(x + w - scrollBarWidth, y, scrollBarWidth, h / 2);
+            g.color = scrollFillColor;
+            g.fillRect(x + w - scrollBarWidth, y, scrollBarWidth, h / 2);
+        }
 
 		_lastTime = System.time;
 	}
+    
+    // this can (should) be refactored a little - this is initial implementation / iteration
+    private function renderLine(g:Graphics, chars:Array<Int>, start:Int, length:Int, x:Float, y:Float, line:Int) {
+        var startIndex = selectionStart;
+        var endIndex = selectionEnd;
+        if (endIndex < startIndex) { // this should be moved somewhere else, selectionStart should never be > selectionEnd
+            var temp = startIndex;
+            startIndex = endIndex;
+            endIndex = temp;
+        }
+        
+        g.color = textColor;
+        if (hasSelection()) {
+            var lineStartIndex = 0;
+            if (line > 0) {
+                lineStartIndex = breaks[line - 1];
+            }
+            var lineEndIndex = breaks[line];
+            
+            var startInRange = (startIndex >= lineStartIndex && startIndex <= lineEndIndex);
+            var endInRange = (endIndex >= lineStartIndex && endIndex <= lineEndIndex);
+            
+            if (startInRange == false && endInRange == false) {
+                if (start >= startIndex &&  start + length <= endIndex) {
+                    g.color = highlightTextColor;
+                }
+                g.drawCharacters(chars, start, length, x, y + line * font.height(fontSize) - scrollOffset);
+            } else if (startInRange == true && endInRange == true) {                    
+                g.drawCharacters(chars, start, startIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+              
+                x += font.widthOfCharacters(fontSize, chars, start, startIndex - start);
+                start += startIndex - start;
+                
+                g.color = highlightTextColor;
+                g.drawCharacters(chars, start, endIndex - startIndex, x, y + line * font.height(fontSize) - scrollOffset);
+
+                x += font.widthOfCharacters(fontSize, chars, start, endIndex - startIndex);
+                start += endIndex - startIndex;
+                
+                g.color = textColor;
+                g.drawCharacters(chars, start, lineEndIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+            } else if (startInRange == true && endInRange == false) {
+                g.drawCharacters(chars, start, startIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+              
+                x += font.widthOfCharacters(fontSize, chars, start, startIndex - start);
+                start += startIndex - start;
+                
+                g.color = highlightTextColor;
+                g.drawCharacters(chars, start, lineEndIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+            } else if (startInRange == false && endInRange == true) {
+                g.color = highlightTextColor;
+                g.drawCharacters(chars, start, endIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+                
+                x += font.widthOfCharacters(fontSize, chars, start, endIndex - start);
+                start += endIndex - start;
+
+                
+                g.color = textColor;
+                g.drawCharacters(chars, start, lineEndIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+            } else {
+                g.drawCharacters(chars, start, length, x, y + line * font.height(fontSize) - scrollOffset);
+            } 
+        } else {
+            g.drawCharacters(chars, start, length, x, y + line * font.height(fontSize) - scrollOffset);
+        }
+    }
+    
+    private inline function hasSelection() {
+        return ((selectionStart > -1 || selectionEnd > -1) && selectionStart != selectionEnd);
+    }
 }
