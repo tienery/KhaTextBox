@@ -200,7 +200,8 @@ class TextBox
 				if (line == startLine) {
 					x1 = x + margin + startX;
 				}
-				var x2 = x + w - margin - scrollBarWidth;
+				var lineWidth = font.widthOfCharacters(fontSize, characters, breaks[line - 1], breaks[line] - breaks[line - 1]);
+				var x2 = x + lineWidth + 4;
 				if (line == endLine) {
 					x2 = x + margin + endX;
 				}
@@ -1117,7 +1118,7 @@ class TextBox
                     g.color = highlightTextColor;
                 }
                 g.drawCharacters(chars, start, length, x, y + line * font.height(fontSize) - scrollOffset);
-            } else if (startInRange == true && endInRange == true) {                    
+            } else if (startInRange == true && endInRange == true) {
                 g.drawCharacters(chars, start, startIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
               
                 x += font.widthOfCharacters(fontSize, chars, start, startIndex - start);
