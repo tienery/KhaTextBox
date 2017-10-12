@@ -284,6 +284,27 @@ class TextBox
         }
 
 		_lastTime = System.time;
+
+		#if debug
+		g.color = Color.White;
+		g.fontSize = 12;
+		var lineY = 2.0;
+		
+		var values:Dynamic = {
+			totalBreaks: breaks.length,
+			totalCharacters: characters.length,
+			caretIndex: cursorIndex,
+		};
+
+		for (field in Reflect.fields(values))
+		{
+			var print_text = "" + field + ": " + Reflect.field(values, field);
+			var print_width = g.font.width(g.fontSize, print_text);
+			g.drawString("" + field + ": " + Reflect.field(values, field), System.windowWidth() - print_width - 4, lineY);
+			lineY += g.font.height(g.fontSize) + 4;
+		}
+
+		#end
 	} //render
 
 	public function update():Void // update
@@ -722,6 +743,8 @@ class TextBox
 			--cursorIndex;
 			if (cursorIndex < 0)
 				cursorIndex = 0;
+			
+			format();
 		}
 	} // doBackspaceOperation
 
@@ -740,6 +763,8 @@ class TextBox
 				else
 					characters.splice(cursorIndex, 1);
 			}
+
+			format();
 		}
 	} // doDeleteOperation
 
@@ -966,9 +991,13 @@ class TextBox
 	{
 		if (!disableInsert)
 		{
+			if (hasSelection())
+				doDeleteOperation();
+
 			anim = 0;
 			characters.insert(cursorIndex, char);
 			++cursorIndex;
+			selectionStart = selectionEnd = -1;
 			format();
 		}
 	} // insertCharacter
