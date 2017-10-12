@@ -56,6 +56,10 @@ class TextBox {
 
 	static var scrollBarWidth = 25;
 
+    public var textColor:Int = -1;
+    public var highlightColor:Int = -1;
+    public var highlightTextColor:Int = -1;
+    
 	public function new(x: Float, y: Float, w: Float, h: Float, font: Font, fontSize: Int) {
 		this.x = x;
 		this.y = y;
@@ -99,6 +103,16 @@ class TextBox {
 		format();
 
 		_lastTime = System.time;
+        
+        if (textColor == -1) {
+            textColor = Color.Black;
+        }
+        if (highlightColor == -1) {
+            highlightColor = 0xFF3390FF;
+        }
+        if (highlightTextColor == -1) {
+            highlightTextColor = Color.White;
+        }
 	}
 
 	public function setText(value:String)
@@ -810,6 +824,7 @@ class TextBox {
 			var endX = font.widthOfCharacters(fontSize, characters, endBreak, endIndex - endBreak);
 			//g.fillRect(x + margin + startX, y + margin + startLine * font.height(fontSize), 200, (endLine - startLine + 1) * font.height(fontSize));
 			
+    		g.color = highlightColor;
 			for (line in startLine...endLine + 1) {
 				var x1 = x + margin;
 				if (line == startLine) {
@@ -819,27 +834,26 @@ class TextBox {
 				if (line == endLine) {
 					x2 = x + margin + endX;
 				}
-				g.color = Color.fromFloats(.5, .5, 1);
 				g.fillRect(x1, y + margin + line * font.height(fontSize) - scrollOffset, x2 - x1, font.height(fontSize));
 			}
 		}
 
-		g.color = Color.Black;
+		g.color = textColor;
 		g.font = font;
 		g.fontSize = fontSize;
 
 		if (breaks.length == 0) {
 			g.drawCharacters(characters, 0, characters.length, x + margin, y + margin);
-		}
-		else {
+		} else { 
 			var line = 0;
 			var lastBreak = 0;
 			for (lineBreak in breaks) {
-				g.drawCharacters(characters, lastBreak, lineBreak - lastBreak, x + margin, y + margin + line * font.height(fontSize) - scrollOffset);
+                renderLine(g, characters, lastBreak, lineBreak - lastBreak, x + margin, y + margin, line);
+                
 				lastBreak = lineBreak;
 				++line;
 			}
-			g.drawCharacters(characters, lastBreak, characters.length - lastBreak, x + margin, y + margin + line * font.height(fontSize) - scrollOffset);
+            renderLine(g, characters, lastBreak, characters.length - lastBreak, x + margin, y + margin, line);
 		}
 		
 		if (Std.int(anim / 20) % 2 == 0 && isActive) {
@@ -893,4 +907,74 @@ class TextBox {
 
 		_lastTime = System.time;
 	}
+    
+    // this can (should) be refactored a little - this is initial implementation / iteration
+    private function renderLine(g:Graphics, chars:Array<Int>, start:Int, length:Int, x:Float, y:Float, line:Int) {
+        var startIndex = selectionStart;
+        var endIndex = selectionEnd;
+        if (endIndex < startIndex) { // this should be moved somewhere else, selectionStart should never be > selectionEnd
+            var temp = startIndex;
+            startIndex = endIndex;
+            endIndex = temp;
+        }
+        
+        g.color = textColor;
+        if (hasSelection()) {
+            var lineStartIndex = 0;
+            if (line > 0) {
+                lineStartIndex = breaks[line - 1];
+            }
+            var lineEndIndex = breaks[line];
+            
+            var startInRange = (startIndex >= lineStartIndex && startIndex <= lineEndIndex);
+            var endInRange = (endIndex >= lineStartIndex && endIndex <= lineEndIndex);
+            
+            if (startInRange == false && endInRange == false) {
+                if (start >= startIndex &&  start + length <= endIndex) {
+                    g.color = highlightTextColor;
+                }
+                g.drawCharacters(chars, start, length, x, y + line * font.height(fontSize) - scrollOffset);
+            } else if (startInRange == true && endInRange == true) {                    
+                g.drawCharacters(chars, start, startIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+              
+                x += font.widthOfCharacters(fontSize, chars, start, startIndex - start);
+                start += startIndex - start;
+                
+                g.color = highlightTextColor;
+                g.drawCharacters(chars, start, endIndex - startIndex, x, y + line * font.height(fontSize) - scrollOffset);
+
+                x += font.widthOfCharacters(fontSize, chars, start, endIndex - startIndex);
+                start += endIndex - startIndex;
+                
+                g.color = textColor;
+                g.drawCharacters(chars, start, lineEndIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+            } else if (startInRange == true && endInRange == false) {
+                g.drawCharacters(chars, start, startIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+              
+                x += font.widthOfCharacters(fontSize, chars, start, startIndex - start);
+                start += startIndex - start;
+                
+                g.color = highlightTextColor;
+                g.drawCharacters(chars, start, lineEndIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+            } else if (startInRange == false && endInRange == true) {
+                g.color = highlightTextColor;
+                g.drawCharacters(chars, start, endIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+                
+                x += font.widthOfCharacters(fontSize, chars, start, endIndex - start);
+                start += endIndex - start;
+
+                
+                g.color = textColor;
+                g.drawCharacters(chars, start, lineEndIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+            } else {
+                g.drawCharacters(chars, start, length, x, y + line * font.height(fontSize) - scrollOffset);
+            } 
+        } else {
+            g.drawCharacters(chars, start, length, x, y + line * font.height(fontSize) - scrollOffset);
+        }
+    }
+    
+    private inline function hasSelection() {
+        return ((selectionStart > -1 || selectionEnd > -1) && selectionStart != selectionEnd);
+    }
 }
