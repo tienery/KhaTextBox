@@ -48,6 +48,9 @@ class TextBox
 	var isMouseOverScrollBar:Bool;
 	var isMouseDownScrollBar:Bool;
 
+	var scrollBarLastY:Float;
+	var scrollBarCurrentY:Float;
+
 	var keyCodeDown:Int;
 	var repeatInterval:Int;
 	var repeat:Int;
@@ -104,6 +107,7 @@ class TextBox
 		this.font = font;
 		this.fontSize = fontSize;
 		scrollBarWidth = 25;
+		scrollBarCurrentY = y;
 		scrollTop = scrollBottom = scrollOffset = 0;
 		anim = 0;
 		characters = [];
@@ -310,7 +314,7 @@ class TextBox
                 scrollFillColor = Color.fromBytes(150, 150, 150);
 
             g.color = scrollFillColor;
-            g.fillRect(x + w - scrollBarWidth, y, scrollBarWidth, h / 2);
+            g.fillRect(x + w - scrollBarWidth, scrollBarCurrentY, scrollBarWidth, h / 2);
         }
 
 		_lastTime = System.time;
@@ -453,6 +457,7 @@ class TextBox
 		if (y >= this.y && y <= this.y + this.h) {
 			if (x >= this.x + this.w - scrollBarWidth && x <= this.x + this.w) {
 				isMouseDownScrollBar = true;
+				scrollBarLastY = y - this.y;
 			}
 			else if (x >= this.x && x <= this.x + this.w) {
 				selectionStart = selectionEnd = findIndex(x - this.x, y - this.y);
@@ -506,10 +511,14 @@ class TextBox
 
 		if (y >= this.y && y <= this.y + this.h)
 		{
-			if (x >= this.x + this.w - scrollBarWidth && x <= this.x + this.w) {
-				isMouseOverScrollBar = true;
+			if (x >= this.x && x <= this.x + this.w) 
+			{
+				moveScrollBar(y);
+				if (x >= this.x + this.w - scrollBarWidth)
+					isMouseOverScrollBar = true;
 			}
-			else if (!isMouseDownScrollBar && mouseButtonDown && selectionStart >= 0 && x >= this.x && x <= this.x + this.w - scrollBarWidth) {
+			else if (mouseButtonDown && selectionStart >= 0 && x >= this.x && x <= this.x + this.w - scrollBarWidth) 
+			{
 				isMouseOverScrollBar = false;
 				cursorIndex = selectionEnd = findIndex(x - this.x, y - this.y);
 				if (cursorIndex < 0)
@@ -798,6 +807,19 @@ class TextBox
 			scrollBarWidth = 25;
 		}
 	} // checkScrollBar
+
+	function moveScrollBar(y:Int)
+	{
+		if (isMouseDownScrollBar)
+		{
+			scrollBarCurrentY = y - scrollBarLastY;
+
+			if (scrollBarCurrentY < this.y)
+				scrollBarCurrentY = this.y;
+			else if (scrollBarCurrentY > this.h / 2 + this.y)
+				scrollBarCurrentY = this.h / 2 + this.y;
+		}
+	}
 
 
 	/**
