@@ -2,6 +2,7 @@ package textbox;
 
 import kha.Color;
 import kha.Font;
+import kha.Scheduler;
 import kha.graphics2.Graphics;
 import kha.input.KeyCode;
 import kha.input.Keyboard;
@@ -50,9 +51,6 @@ class TextBox {
 	var isMouseDownScrollBar: Bool;
 
 	var keyCodeDown: Int;
-	var repeatInterval: Int;
-	var repeat: Int;
-	var repeatDelay: Float;
 
 	static var scrollBarWidth = 25;
 
@@ -72,8 +70,6 @@ class TextBox {
 		anim = 0;
 		characters = [];
 		beginScrollOver = false;
-		repeat = 0;
-		repeatInterval = 2;
 		// cursorIndexCache = [];
 		breaks = [];
 		disableInsert = showEditingCursor = wordSelection = selecting = false;
@@ -386,20 +382,42 @@ class TextBox {
 		}
 	}
 
+    private var _repeatTimerId:Int;
+    private function repeatTimer() {
+		if (keyCodeDown > -1)
+		{
+            if (isActive)
+            {
+                var code = keyCodeDown;
+                anim = 0;
+                switch (code)
+                {
+                    case Left:
+                        doLeftOperation();
+                    case Right:
+                        doRightOperation();
+                    case Up:
+                        doUpOperation();
+                    case Down:
+                        doDownOperation();
+                    case Delete:
+                        doDeleteOperation();
+                    case Backspace:
+                        doBackspaceOperation();
+                    default:
+                        if (isChar(keyCodeDown))
+                            insertCharacter(keyCodeDown);
+                }
+            }
+		}
+    }
+
 	function keyDown(code: KeyCode): Void {
 		if (!isActive)
 			return;
 		
 		keyCodeDown = code;
 		switch (code) {
-			case Left:
-				doLeftOperation();
-			case Right:
-				doRightOperation();
-			case Down:
-				doDownOperation();
-			case Up:
-				doUpOperation();
 			case Shift:
 				if (selectionStart == -1 && selectionEnd == -1)
 					selectionStart = selectionEnd = cursorIndex;
@@ -410,6 +428,9 @@ class TextBox {
 				disableInsert = true;
 			default:
 		}
+        
+        Scheduler.removeTimeTask(_repeatTimerId);
+        _repeatTimerId = Scheduler.addTimeTask(repeatTimer, 0, 1 / 20);
 	}
 
 	function keyUp(code: KeyCode): Void {
@@ -433,6 +454,8 @@ class TextBox {
 				disableInsert = false;
 			default:
 		}
+        
+        Scheduler.removeTimeTask(_repeatTimerId);
 	}
 
 	function mouseDown(button: Int, x: Int, y: Int): Void {
@@ -736,7 +759,6 @@ class TextBox {
 
 	public function update(): Void {
 		++anim;
-		++repeat;
 	}
 
 	function findLine(index: Int): Int {
@@ -787,39 +809,6 @@ class TextBox {
 		g.fillRect(x, y, w, h);
 		g.color = Color.Black;
 		g.drawRect(x, y, w, h);
-
-		if (keyCodeDown > -1)
-		{
-			repeatDelay += _dt;
-			if (repeatDelay >= 0.5)
-			{
-				if (Std.int(repeat / repeatInterval) % 2 == 0 && isActive)
-				{
-					var code = keyCodeDown;
-					anim = 0;
-					switch (code)
-					{
-						case Left:
-							doLeftOperation();
-						case Right:
-							doRightOperation();
-						case Up:
-							doUpOperation();
-						case Down:
-							doDownOperation();
-						case Delete:
-							doDeleteOperation();
-						case Backspace:
-							doBackspaceOperation();
-						default:
-							if (isChar(keyCodeDown))
-								insertCharacter(keyCodeDown);
-					}
-				}
-			}
-		}
-		else
-			repeatDelay = 0;
 
 		g.scissor(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
 
