@@ -294,6 +294,10 @@ class TextBox
 			totalBreaks: breaks.length,
 			totalCharacters: characters.length,
 			caretIndex: cursorIndex,
+			selectionStart: selectionStart,
+			selectionEnd: selectionEnd,
+			isActive: isActive,
+			beginScrollOver: beginScrollOver
 		};
 
 		for (field in Reflect.fields(values))
@@ -458,8 +462,6 @@ class TextBox
 				selectionStart = selectionEnd = findIndex(x - this.x, y - this.y);
 			}
 		}
-		else
-			isActive = false;
 	} // mouseDown
 
 	function mouseUp(button:Int, x:Int, y:Int):Void // mouseUp
@@ -992,7 +994,7 @@ class TextBox
 		if (!disableInsert)
 		{
 			if (hasSelection())
-				doDeleteOperation();
+				removeSelection();
 
 			anim = 0;
 			characters.insert(cursorIndex, char);
