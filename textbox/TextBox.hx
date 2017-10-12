@@ -396,12 +396,11 @@ class TextBox
 		}
 
 		Scheduler.removeTimeTask(_repeatTimerId);
-        _repeatTimerId = Scheduler.addTimeTask(repeatTimer, 0, 1 / 20);
         Scheduler.addTimeTaskToGroup(1234, function() { // 1234 is the group, seems as good as any group id
           	 if (keyCodeDown > -1) {
                 _repeatTimerId = Scheduler.addTimeTask(repeatTimer, 0, 1 / 20);
              }
-        }, 1 / 5);
+        }, .6);
 	} // keyDown
 
 	function keyUp(code:KeyCode):Void // keyUp
@@ -539,33 +538,35 @@ class TextBox
 		keyCodeDown = char;
 	} // keyPress
 
- 	var _repeatTimerId:Int;
+	var _repeatTimerId:Int;
+	var _repeatDelay:Int = 0;
+	var _repeatDelayMax:Int = 1;
     function repeatTimer() {
 		if (keyCodeDown > -1)
 		{
-            if (isActive)
-            {
-                var code = keyCodeDown;
-                anim = 0;
-                switch (code)
-                {
-                    case Left:
-                        doLeftOperation();
-                    case Right:
-                        doRightOperation();
-                    case Up:
-                        doUpOperation();
-                    case Down:
-                        doDownOperation();
-                    case Delete:
-                        doDeleteOperation();
-                    case Backspace:
-                        doBackspaceOperation();
-                    default:
-                        if (isChar(keyCodeDown))
-                            insertCharacter(keyCodeDown);
-                }
-            }
+			if (isActive)
+			{
+				var code = keyCodeDown;
+				anim = 0;
+				switch (code)
+				{
+					case Left:
+						doLeftOperation();
+					case Right:
+						doRightOperation();
+					case Up:
+						doUpOperation();
+					case Down:
+						doDownOperation();
+					case Delete:
+						doDeleteOperation();
+					case Backspace:
+						doBackspaceOperation();
+					default:
+						if (isChar(keyCodeDown))
+							insertCharacter(keyCodeDown);
+				}
+			}
 		}
     }
 
