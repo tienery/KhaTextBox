@@ -418,6 +418,18 @@ class TextBox {
 		
 		keyCodeDown = code;
 		switch (code) {
+            case Left:
+                doLeftOperation();
+            case Right:
+                doRightOperation();
+            case Up:
+                doUpOperation();
+            case Down:
+                doDownOperation();
+            case Delete:
+                doDeleteOperation();
+            case Backspace:
+                doBackspaceOperation();
 			case Shift:
 				if (selectionStart == -1 && selectionEnd == -1)
 					selectionStart = selectionEnd = cursorIndex;
@@ -430,7 +442,11 @@ class TextBox {
 		}
         
         Scheduler.removeTimeTask(_repeatTimerId);
-        _repeatTimerId = Scheduler.addTimeTask(repeatTimer, 0, 1 / 20);
+        Scheduler.addTimeTaskToGroup(1234, function() { // 1234 is the group, seems as good as any group id
+            if (keyCodeDown != -1) {
+                _repeatTimerId = Scheduler.addTimeTask(repeatTimer, 0, 1 / 20);
+            }
+        }, 1 / 5);
 	}
 
 	function keyUp(code: KeyCode): Void {
@@ -438,17 +454,14 @@ class TextBox {
 			return;
 
 		keyCodeDown = -1;
-
+        Scheduler.removeTimeTasks(1234);
+        
 		switch (code) {
 			case Shift:
 				selecting = false;
 			case Left, Right, Up, Down:
 				if (!selecting)
 					selectionStart = selectionEnd = -1;
-			case Backspace:
-				doBackspaceOperation();
-			case Delete:
-				doDeleteOperation();
 			case Control:
 				wordSelection = false;
 				disableInsert = false;
