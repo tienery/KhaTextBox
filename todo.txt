@@ -8,8 +8,8 @@
 - Word-wrapping functionality
 - key-repeat
 - Make the textbox scroll to where the caret lands.
-Fully functional scroll-bar: allowing clicking and moving, as well as updating when we scroll with arrow keys or mouse wheel.
-Allow scroll-bar to be visible or not
+- Fully functional scroll-bar: allowing clicking and moving, as well as updating when we scroll with arrow keys or mouse wheel.
+- Allow scroll-bar to be visible or not
 
 Refactor break-handling:
   * Make word-wrapping optional.
