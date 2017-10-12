@@ -205,10 +205,12 @@ class TextBox
 
 		g.scissor(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
 
-		if ((selectionStart > -1 || selectionEnd > -1) && selectionStart != selectionEnd) {
+		if ((selectionStart > -1 || selectionEnd > -1) && selectionStart != selectionEnd) 
+		{
 			var startIndex = selectionStart;
 			var endIndex = selectionEnd;
-			if (endIndex < startIndex) {
+			if (endIndex < startIndex) 
+			{
 				var temp = startIndex;
 				startIndex = endIndex;
 				endIndex = temp;
@@ -222,7 +224,8 @@ class TextBox
 			//g.fillRect(x + margin + startX, y + margin + startLine * font.height(fontSize), 200, (endLine - startLine + 1) * font.height(fontSize));
 			
     		g.color = highlightColor;
-			for (line in startLine...endLine + 1) {
+			for (line in startLine...endLine + 1) 
+			{
 				var x1 = x + margin;
 				if (line == startLine) {
 					x1 = x + margin + startX;
@@ -239,12 +242,15 @@ class TextBox
 		g.font = font;
 		g.fontSize = fontSize;
 
-		if (breaks.length == 0) {
+		if (breaks.length == 0)
+		{
 			g.drawCharacters(characters, 0, characters.length, x + margin, y + margin);
-		} else { 
+		} else
+		{
 			var line = 0;
 			var lastBreak = 0;
-			for (lineBreak in breaks) {
+			for (lineBreak in breaks) 
+			{
                 renderLine(g, characters, lastBreak, lineBreak - lastBreak, x + margin, y + margin, line);
                 
 				lastBreak = lineBreak;
@@ -253,18 +259,20 @@ class TextBox
             renderLine(g, characters, lastBreak, characters.length - lastBreak, x + margin, y + margin, line);
 		}
 		
-		if (Std.int(anim / 20) % 2 == 0 && isActive) {
+		if (Std.int(anim / 20) % 2 == 0 && isActive) 
+		{ // blink caret
 			var line = findCursorLine();
 			var lastBreak = line > 0 ? breaks[line - 1] : 0;
 			var cursorX = font.widthOfCharacters(fontSize, characters, lastBreak, cursorIndex - lastBreak);
 			g.drawLine(x + margin + cursorX, y + margin + font.height(fontSize) * line - scrollOffset, x + margin + cursorX, y + margin + font.height(fontSize) * (line + 1) - scrollOffset, 2);
-		}
+		} // blink caret
 
-		if (Std.int(anim / 5) % 2 == 0 && beginScrollOver && isActive) {
+		if (Std.int(anim / 5) % 2 == 0 && beginScrollOver && isActive) 
+		{
 			scroll();
 		}
 
-		if (showEditingCursor)
+		if (showEditingCursor && !isMouseDownScrollBar)
 		{
 			_mouse.hideSystemCursor();
 			var fontHeight = font.height(fontSize);
@@ -290,7 +298,8 @@ class TextBox
 
 		g.disableScissor();
 
-        if (useScrollBar == true) {
+        if (useScrollBar)
+		{
             g.color = Color.fromBytes(40, 40, 40);
             g.fillRect(x + w - scrollBarWidth, y, scrollBarWidth, h);
 
@@ -457,9 +466,14 @@ class TextBox
 	{
 		mouseButtonDown = false;
 		beginScrollOver = false;
-		isMouseDownScrollBar = false;
 		if (x >= this.x && x <= this.x + w - scrollBarWidth && y >= this.y && y <= this.y + h)
 		{
+			if (isMouseDownScrollBar)
+			{
+				isMouseDownScrollBar = false;
+				return;
+			}
+
 			isActive = true;
 			cursorIndex = findIndex(x - this.x, y - this.y);
 			if (selecting)
@@ -479,6 +493,8 @@ class TextBox
 		{
 			isActive = false;
 		}
+
+		isMouseDownScrollBar = false;
 	} // mouseUp
 
 	function mouseMove(x:Int, y:Int, mx:Int, my:Int):Void // mouseMove
@@ -493,7 +509,7 @@ class TextBox
 			if (x >= this.x + this.w - scrollBarWidth && x <= this.x + this.w) {
 				isMouseOverScrollBar = true;
 			}
-			else if (mouseButtonDown && selectionStart >= 0 && x >= this.x && x <= this.x + this.w - scrollBarWidth) {
+			else if (!isMouseDownScrollBar && mouseButtonDown && selectionStart >= 0 && x >= this.x && x <= this.x + this.w - scrollBarWidth) {
 				isMouseOverScrollBar = false;
 				cursorIndex = selectionEnd = findIndex(x - this.x, y - this.y);
 				if (cursorIndex < 0)
