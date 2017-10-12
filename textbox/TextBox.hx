@@ -457,7 +457,7 @@ class TextBox
 		if (y >= this.y && y <= this.y + this.h) {
 			if (x >= this.x + this.w - scrollBarWidth && x <= this.x + this.w) {
 				isMouseDownScrollBar = true;
-				scrollBarLastY = y - this.y;
+				scrollBarLastY = y - scrollBarCurrentY;
 			}
 			else if (x >= this.x && x <= this.x + this.w) {
 				selectionStart = selectionEnd = findIndex(x - this.x, y - this.y);
@@ -511,22 +511,25 @@ class TextBox
 
 		if (y >= this.y && y <= this.y + this.h)
 		{
-			if (x >= this.x && x <= this.x + this.w) 
+			if (x >= this.x + this.w - scrollBarWidth && x <= this.x + this.w) 
 			{
 				moveScrollBar(y);
-				if (x >= this.x + this.w - scrollBarWidth)
-					isMouseOverScrollBar = true;
-				else
-					isMouseOverScrollBar = false;
+				isMouseOverScrollBar = true;
 			}
-			else if (mouseButtonDown && selectionStart >= 0 && x >= this.x && x <= this.x + this.w - scrollBarWidth) 
+			else if (x >= this.x && x <= this.x + this.w)
 			{
+				moveScrollBar(y);
 				isMouseOverScrollBar = false;
-				cursorIndex = selectionEnd = findIndex(x - this.x, y - this.y);
-				if (cursorIndex < 0)
-					cursorIndex = 0;
-				else if (cursorIndex > characters.length)
-					cursorIndex = characters.length;
+
+				if (mouseButtonDown && selectionStart >= 0)
+				{
+					isMouseOverScrollBar = false;
+					cursorIndex = selectionEnd = findIndex(x - this.x, y - this.y);
+					if (cursorIndex < 0)
+						cursorIndex = 0;
+					else if (cursorIndex > characters.length)
+						cursorIndex = characters.length;
+				}
 			}
 			else
 				isMouseOverScrollBar = false;
@@ -547,6 +550,8 @@ class TextBox
 			scrollOffset = scrollTop;
 		else if (scrollOffset > scrollBottom)
 			scrollOffset = scrollBottom;
+		
+		updateScrollBarPosition();
 	} // mouseWheel
 
 	function keyPress(character:String):Void // keyPress
@@ -759,6 +764,8 @@ class TextBox
 			scrollOffset = scrollBottom;
 		else if (scrollOffset < 0)
 			scrollOffset = 0;
+		
+		updateScrollBarPosition();
 	} // scrollToCaret
 
 	function scroll() // scroll
@@ -789,7 +796,22 @@ class TextBox
 			cursorIndex = 0;
 		else if (cursorIndex > characters.length)
 			cursorIndex = characters.length;
+		
+		updateScrollBarPosition();
 	} // scroll
+
+	function updateScrollBarPosition() // updateScrollBarPosition
+	{
+		var percent = scrollOffset / scrollBottom;
+
+		scrollBarCurrentY = percent * (this.h / 2) + this.y;
+
+		if (scrollBarCurrentY < this.y)
+			scrollBarCurrentY = this.y;
+		else if (scrollBarCurrentY > this.y + this.h / 2)
+			scrollBarCurrentY = this.y + this.h / 2;
+		
+	} // updateScrollBarPosition
 
 	function checkScrollBar() // checkScrollBar
 	{
