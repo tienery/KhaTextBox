@@ -539,8 +539,6 @@ class TextBox
 	} // keyPress
 
 	var _repeatTimerId:Int;
-	var _repeatDelay:Int = 0;
-	var _repeatDelayMax:Int = 1;
     function repeatTimer() {
 		if (keyCodeDown > -1)
 		{
