@@ -115,6 +115,21 @@ class TextBox {
         }
 	}
 
+    private var _useScrollBar:Bool = true;
+    public var useScrollBar(get, set):Bool;
+    private function get_useScrollBar():Bool {
+        return _useScrollBar;
+    }
+    private function set_useScrollBar(value:Bool):Bool {
+        _useScrollBar = value;
+        if (value == true) {
+            scrollBarWidth = 25;
+        } else {
+            scrollBarWidth = 0;
+        }
+        return value;
+    }
+    
 	public function setText(value:String)
 	{
 		characters = value.toCharArray();
@@ -893,17 +908,19 @@ class TextBox {
 
 		g.disableScissor();
 
-		g.color = Color.fromBytes(40, 40, 40);
-		g.fillRect(x + w - scrollBarWidth, y, scrollBarWidth, h);
+        if (useScrollBar == true) {
+            g.color = Color.fromBytes(40, 40, 40);
+            g.fillRect(x + w - scrollBarWidth, y, scrollBarWidth, h);
 
-		var scrollFillColor = Color.fromBytes(80, 80, 80);
-		if (isMouseDownScrollBar)
-			scrollFillColor = Color.fromBytes(20, 20, 20);
-		else if (isMouseOverScrollBar)
-			scrollFillColor = Color.fromBytes(150, 150, 150);
+            var scrollFillColor = Color.fromBytes(80, 80, 80);
+            if (isMouseDownScrollBar)
+                scrollFillColor = Color.fromBytes(20, 20, 20);
+            else if (isMouseOverScrollBar)
+                scrollFillColor = Color.fromBytes(150, 150, 150);
 
-		g.color = scrollFillColor;
-		g.fillRect(x + w - scrollBarWidth, y, scrollBarWidth, h / 2);
+            g.color = scrollFillColor;
+            g.fillRect(x + w - scrollBarWidth, y, scrollBarWidth, h / 2);
+        }
 
 		_lastTime = System.time;
 	}
