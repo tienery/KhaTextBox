@@ -8,6 +8,7 @@ import kha.input.KeyCode;
 import kha.input.Keyboard;
 import kha.input.Mouse;
 import kha.System;
+import kha.Scheduler;
 
 using kha.StringExtensions;
 
@@ -52,9 +53,6 @@ class TextBox
 	var scrollBarCurrentY:Float;
 
 	var keyCodeDown:Int;
-	var repeatInterval:Int;
-	var repeat:Int;
-	var repeatDelay:Float;
 
 	static var scrollBarWidth = 25;
 	static inline var margin:Float = 10;
@@ -175,46 +173,13 @@ class TextBox
 		g.color = Color.Black;
 		g.drawRect(x, y, w, h);
 
-		if (keyCodeDown > -1)
-		{
-			repeatDelay += _dt;
-			if (repeatDelay >= 0.5)
-			{
-				if (Std.int(repeat / repeatInterval) % 2 == 0 && isActive)
-				{
-					var code = keyCodeDown;
-					anim = 0;
-					switch (code)
-					{
-						case Left:
-							doLeftOperation();
-						case Right:
-							doRightOperation();
-						case Up:
-							doUpOperation();
-						case Down:
-							doDownOperation();
-						case Delete:
-							doDeleteOperation();
-						case Backspace:
-							doBackspaceOperation();
-						default:
-							if (isChar(keyCodeDown))
-								insertCharacter(keyCodeDown);
-					}
-				}
-			}
-		}
-		else
-			repeatDelay = 0;
-
 		g.scissor(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
 
 		if ((selectionStart > -1 || selectionEnd > -1) && selectionStart != selectionEnd) 
 		{
 			var startIndex = selectionStart;
 			var endIndex = selectionEnd;
-			if (endIndex < startIndex) 
+			if (endIndex < startIndex)
 			{
 				var temp = startIndex;
 				startIndex = endIndex;
@@ -324,7 +289,6 @@ class TextBox
 	public function update():Void // update
 	{
 		++anim;
-		++repeat;
 	} // update
 
 	
@@ -416,6 +380,10 @@ class TextBox
 				doDownOperation();
 			case Up:
 				doUpOperation();
+			case Backspace:
+				doBackspaceOperation();
+			case Delete:
+				doDeleteOperation();
 			case Shift:
 				if (selectionStart == -1 && selectionEnd == -1)
 					selectionStart = selectionEnd = cursorIndex;
@@ -426,6 +394,14 @@ class TextBox
 				disableInsert = true;
 			default:
 		}
+
+		Scheduler.removeTimeTask(_repeatTimerId);
+        _repeatTimerId = Scheduler.addTimeTask(repeatTimer, 0, 1 / 20);
+        Scheduler.addTimeTaskToGroup(1234, function() { // 1234 is the group, seems as good as any group id
+          	 if (keyCodeDown > -1) {
+                _repeatTimerId = Scheduler.addTimeTask(repeatTimer, 0, 1 / 20);
+             }
+        }, 1 / 5);
 	} // keyDown
 
 	function keyUp(code:KeyCode):Void // keyUp
@@ -435,16 +411,14 @@ class TextBox
 
 		keyCodeDown = -1;
 
+		Scheduler.removeTimeTasks(1234);
+
 		switch (code) {
 			case Shift:
 				selecting = false;
 			case Left, Right, Up, Down:
 				if (!selecting)
 					selectionStart = selectionEnd = -1;
-			case Backspace:
-				doBackspaceOperation();
-			case Delete:
-				doDeleteOperation();
 			case Control:
 				wordSelection = false;
 				disableInsert = false;
@@ -564,6 +538,36 @@ class TextBox
 		insertCharacter(char);
 		keyCodeDown = char;
 	} // keyPress
+
+ 	var _repeatTimerId:Int;
+    function repeatTimer() {
+		if (keyCodeDown > -1)
+		{
+            if (isActive)
+            {
+                var code = keyCodeDown;
+                anim = 0;
+                switch (code)
+                {
+                    case Left:
+                        doLeftOperation();
+                    case Right:
+                        doRightOperation();
+                    case Up:
+                        doUpOperation();
+                    case Down:
+                        doDownOperation();
+                    case Delete:
+                        doDeleteOperation();
+                    case Backspace:
+                        doBackspaceOperation();
+                    default:
+                        if (isChar(keyCodeDown))
+                            insertCharacter(keyCodeDown);
+                }
+            }
+		}
+    }
 
 
 	/**
