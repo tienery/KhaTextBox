@@ -759,6 +759,11 @@ class TextBox {
 	{
 		var scrollMax = (breaks.length + 1) * font.height(fontSize);
 		scrollBottom = (scrollMax) - h + margin;
+        
+        if (useScrollBar == false) {
+            return;
+        }
+        
 		if (scrollMax < h)
 		{
 			scrollBarWidth = 0;
