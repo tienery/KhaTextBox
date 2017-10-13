@@ -90,6 +90,7 @@ class TextBox
         } else {
             scrollBarWidth = 0;
         }
+        format();
         return value;
     }
 
