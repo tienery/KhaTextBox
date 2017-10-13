@@ -1106,7 +1106,11 @@ class TextBox
             if (line > 0) {
                 lineStartIndex = breaks[line - 1];
             }
-            var lineEndIndex = breaks[line];
+            
+            var lineEndIndex = characters.length;
+            if (line < breaks.length) {
+                lineEndIndex = breaks[line];
+            }
             
             var startInRange = (startIndex >= lineStartIndex && startIndex <= lineEndIndex);
             var endInRange = (endIndex >= lineStartIndex && endIndex <= lineEndIndex);
@@ -1148,8 +1152,6 @@ class TextBox
                 
                 g.color = textColor;
                 g.drawCharacters(chars, start, lineEndIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
-            } else {
-                g.drawCharacters(chars, start, length, x, y + line * font.height(fontSize) - scrollOffset);
             } 
         } else {
             g.drawCharacters(chars, start, length, x, y + line * font.height(fontSize) - scrollOffset);
