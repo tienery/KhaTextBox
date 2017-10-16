@@ -2,8 +2,8 @@
 - Blinking caret
 - Highlight and selection capabilities with mouse and keyboard.
 - Common hotkey implementations, including Ctrl+C, Ctrl+V, and Ctrl+X, for copy, paste and cut, respectively.
-  * CTRL+A to select all
-  * CTRL+D to deselect
+  * - CTRL+A to select all
+  * - CTRL+D to deselect
 - Holding Ctrl with arrow keys should increase caret index on a per word basis.
 - Word-wrapping functionality
 - key-repeat
@@ -20,8 +20,8 @@ Refactor break-handling:
   * If multiline is off and word-wrapping if off, this should simulate a single-line textbox.
 
 Refactor scrolling functionality:
-  * Convert scrollOffset to a `FastVector2`.
-  * Use `x` and `y` respectively to determine scroll horizontally and vertically.
+  * - Convert scrollOffset to a `FastVector2`.
+  * - Use `x` and `y` respectively to determine scroll horizontally and vertically.
   * Instead of hiding scroll-bar and adjusting margin accordingly, keep a fixed scroll-bar width to leave a gap between respective margins to prevent misbehaviour in textbox.
   * Allow Alt+Mouse Wheel to scroll left and right in a multiline scenario with word-wrapping off.
   * Determine scroll based on exact caret location, and move along accordingly.

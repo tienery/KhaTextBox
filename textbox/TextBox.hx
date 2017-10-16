@@ -54,6 +54,7 @@ class TextBox
 	var scrollBarCurrentY:Float;
 
 	var keyCodeDown:Int;
+	var ctrl:Bool;
 
 	static var scrollBarWidth = 25;
 	static inline var margin:Float = 10;
@@ -245,6 +246,7 @@ class TextBox
 			var line = findCursorLine();
 			var lastBreak = line > 0 ? breaks[line - 1] : 0;
 			var cursorX = font.widthOfCharacters(fontSize, characters, lastBreak, cursorIndex - lastBreak);
+			g.color = Color.Black;
 			g.drawLine(x + margin + cursorX, y + margin + font.height(fontSize) * line - scrollOffset.y, x + margin + cursorX, y + margin + font.height(fontSize) * (line + 1) - scrollOffset.y, 2);
 		} // blink caret
 
@@ -428,6 +430,7 @@ class TextBox
 			case Control:
 				wordSelection = true;
 				disableInsert = true;
+				ctrl = true;
 			default:
 		}
 
@@ -457,6 +460,18 @@ class TextBox
 			case Control:
 				wordSelection = false;
 				disableInsert = false;
+				ctrl = false;
+			case A:
+				if (ctrl)
+				{
+					selectionStart = 0;
+					selectionEnd = characters.length;
+				}
+			case D:
+				if (ctrl)
+				{
+					selectionStart = selectionEnd = -1;
+				}
 			default:
 		}
 	} // keyUp
@@ -566,7 +581,7 @@ class TextBox
 
 	function keyPress(character:String):Void // keyPress
 	{
-		if (!isActive)
+		if (!isActive || ctrl)
 			return;
 
 		var char = character.charCodeAt(0);
