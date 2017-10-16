@@ -101,7 +101,7 @@ class TextBox
 	/**
 	* Create a new `TextBox`.
 	**/
-	public function new(x: Float, y: Float, w: Float, h: Float, font: Font, fontSize: Int) // constructor
+	public function new(x:Float, y:Float, w:Float, h:Float, font:Font, fontSize:Int) // constructor
 	{
 		position = new FV2(x, y);
 		size = new FV2(w, h);
