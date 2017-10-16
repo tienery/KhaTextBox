@@ -70,6 +70,9 @@ class TextBox
 	public var font:Font;
 	public var fontSize:Int;
 
+	public var border:Int;
+	public var borderColor:Int = -1;
+	public var backColor:Int = -1;
     public var textColor:Int = -1;
     public var highlightColor:Int = -1;
     public var highlightTextColor:Int = -1;
@@ -78,21 +81,20 @@ class TextBox
 	* Public properties
 	**/
 
-	private var _useScrollBar:Bool = true;
+	var _useScrollBar:Bool = true;
     public var useScrollBar(get, set):Bool;
-    private function get_useScrollBar():Bool 
+    function get_useScrollBar():Bool 
 	{
         return _useScrollBar;
     }
-    private function set_useScrollBar(value:Bool):Bool 
+    function set_useScrollBar(val):Bool 
 	{
-        _useScrollBar = value;
-        if (value) {
+        _useScrollBar = val;
+        if (val)
             scrollBarWidth = 25;
-        } else {
+        else
             scrollBarWidth = 0;
-        }
-        return value;
+        return val;
     }
 
 	/**
@@ -144,6 +146,9 @@ class TextBox
 
 		_lastTime = System.time;
         
+		border = 1;
+		borderColor = Color.Black;
+		backColor = Color.White;
         textColor = Color.Black;
         highlightColor = 0xFF3390FF;
         highlightTextColor = Color.White;
@@ -171,10 +176,10 @@ class TextBox
 	{
 		_dt = System.time - _lastTime;
 
-		g.color = Color.White;
+		g.color = backColor;
 		g.fillRect(x, y, w, h);
-		g.color = Color.Black;
-		g.drawRect(x, y, w, h);
+		g.color = borderColor;
+		g.drawRect(x, y, w, h, border);
 
 		g.scissor(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
 
@@ -199,9 +204,9 @@ class TextBox
     		g.color = highlightColor;
 			for (line in startLine...endLine + 1) 
 			{
-				var x1 = x + margin;
+				var x1 = x + margin + border / 2;
 				if (line == startLine) {
-					x1 = x + margin + startX;
+					x1 = x + margin + startX + border / 2;
 				}
 				
 				var lineWidth = 0.0;
@@ -211,9 +216,9 @@ class TextBox
 				else
 					lineWidth = font.widthOfCharacters(fontSize, characters, breaks[line - 1], breaks[line] - breaks[line - 1]);
 				
-				var x2 = x + lineWidth + 5;
+				var x2 = x + lineWidth + 5 + border / 2;
 				if (line == endLine) {
-					x2 = x + margin + endX;
+					x2 = x + margin + endX + border / 2;
 				}
 
 				g.fillRect(x1, y + margin + line * font.height(fontSize) - scrollOffset.y, x2 - x1, font.height(fontSize));
@@ -226,19 +231,19 @@ class TextBox
 
 		if (breaks.length == 0)
 		{
-			g.drawCharacters(characters, 0, characters.length, x + margin, y + margin);
+			g.drawCharacters(characters, 0, characters.length, x + margin + border / 2, y + margin + border / 2);
 		} else
 		{
 			var line = 0;
 			var lastBreak = 0;
 			for (lineBreak in breaks) 
 			{
-                renderLine(g, lastBreak, lineBreak - lastBreak, x + margin, y + margin, line);
+                renderLine(g, lastBreak, lineBreak - lastBreak, x + margin + border / 2, y + margin + border / 2, line);
                 
 				lastBreak = lineBreak;
 				++line;
 			}
-            renderLine(g, lastBreak, characters.length - lastBreak, x + margin, y + margin, line);
+            renderLine(g, lastBreak, characters.length - lastBreak, x + margin + border / 2, y + margin + border / 2, line);
 		}
 		
 		if (Std.int(anim / 20) % 2 == 0 && isActive) 
@@ -247,7 +252,7 @@ class TextBox
 			var lastBreak = line > 0 ? breaks[line - 1] : 0;
 			var cursorX = font.widthOfCharacters(fontSize, characters, lastBreak, cursorIndex - lastBreak);
 			g.color = Color.Black;
-			g.drawLine(x + margin + cursorX, y + margin + font.height(fontSize) * line - scrollOffset.y, x + margin + cursorX, y + margin + font.height(fontSize) * (line + 1) - scrollOffset.y, 2);
+			g.drawLine(x + margin + cursorX + border / 2, y + margin + font.height(fontSize) * line - scrollOffset.y, x + margin + cursorX + border / 2, y + margin + font.height(fontSize) * (line + 1) - scrollOffset.y, 2);
 		} // blink caret
 
 		if (Std.int(anim / 5) % 2 == 0 && beginScrollOver && isActive) 
@@ -284,7 +289,7 @@ class TextBox
         if (useScrollBar)
 		{
             g.color = Color.fromBytes(40, 40, 40);
-            g.fillRect(x + w - scrollBarWidth, y, scrollBarWidth, h);
+            g.fillRect(x + w - scrollBarWidth + border / 2, y + border / 2, scrollBarWidth - border, h - border);
 
             var scrollFillColor = Color.fromBytes(80, 80, 80);
             if (isMouseDownScrollBar)
@@ -293,7 +298,7 @@ class TextBox
                 scrollFillColor = Color.fromBytes(150, 150, 150);
 
             g.color = scrollFillColor;
-            g.fillRect(x + w - scrollBarWidth, scrollBarCurrentY, scrollBarWidth, h / 2);
+            g.fillRect(x + w - scrollBarWidth + border / 2, scrollBarCurrentY + border / 2, scrollBarWidth - border, h / 2 - border);
         }
 
 		_lastTime = System.time;
@@ -878,7 +883,7 @@ class TextBox
 			return;
 
 		var scrollMax = (breaks.length + 1) * font.height(fontSize);
-		scrollBottom = (scrollMax) - h + margin;
+		scrollBottom = (scrollMax) - h + margin * 2;
 
 		if (scrollMax < h)
 		{

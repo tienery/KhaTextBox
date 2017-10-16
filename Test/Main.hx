@@ -15,6 +15,7 @@ class Main {
 		System.init({title: "TextBox", width: 1024, height: 768}, function () {
 			Assets.loadEverything(function () {
 				textBox = new TextBox(50, 50, 400, 400, Assets.fonts.LiberationSans_Regular, 24);
+				textBox.border = 3;
 				System.notifyOnRender(render);
 				Scheduler.addTimeTask(textBox.update, 0, 1 / 60);
 			});
