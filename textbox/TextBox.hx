@@ -63,10 +63,8 @@ class TextBox
 	* Public fields
 	**/
 
-	public var x:Float;
-	public var y:Float;
-	public var w:Float;
-	public var h:Float;
+	public var position:FV2;
+	public var size:FV2;
 	public var font:Font;
 	public var fontSize:Int;
 
@@ -101,11 +99,9 @@ class TextBox
 	* Create a new `TextBox`.
 	**/
 	public function new(x: Float, y: Float, w: Float, h: Float, font: Font, fontSize: Int) // constructor
-	{ 
-		this.x = x;
-		this.y = y;
-		this.w = w;
-		this.h = h;
+	{
+		position = new FV2(x, y);
+		size = new FV2(w, h);
 		this.font = font;
 		this.fontSize = fontSize;
 		scrollBarWidth = 25;
@@ -177,11 +173,11 @@ class TextBox
 		_dt = System.time - _lastTime;
 
 		g.color = backColor;
-		g.fillRect(x, y, w, h);
+		g.fillRect(position.x, position.y, size.x, size.y);
 		g.color = borderColor;
-		g.drawRect(x, y, w, h, border);
+		g.drawRect(position.x, position.y, size.x, size.y, border);
 
-		g.scissor(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+		g.scissor(Math.round(position.x), Math.round(position.y), Math.round(size.x), Math.round(size.y));
 
 		if ((selectionStart > -1 || selectionEnd > -1) && selectionStart != selectionEnd) 
 		{
@@ -204,9 +200,9 @@ class TextBox
     		g.color = highlightColor;
 			for (line in startLine...endLine + 1) 
 			{
-				var x1 = x + margin + border / 2;
+				var x1 = position.x + margin + border / 2;
 				if (line == startLine) {
-					x1 = x + margin + startX + border / 2;
+					x1 = position.x + margin + startX + border / 2;
 				}
 				
 				var lineWidth = 0.0;
@@ -216,12 +212,12 @@ class TextBox
 				else
 					lineWidth = font.widthOfCharacters(fontSize, characters, breaks[line - 1], breaks[line] - breaks[line - 1]);
 				
-				var x2 = x + lineWidth + 5 + border / 2;
+				var x2 = position.x + lineWidth + 5 + border / 2;
 				if (line == endLine) {
-					x2 = x + margin + endX + border / 2;
+					x2 = position.x + margin + endX + border / 2;
 				}
 
-				g.fillRect(x1, y + margin + line * font.height(fontSize) - scrollOffset.y, x2 - x1, font.height(fontSize));
+				g.fillRect(x1, position.y + margin + line * font.height(fontSize) - scrollOffset.y, x2 - x1, font.height(fontSize));
 			}
 		}
 
@@ -231,19 +227,19 @@ class TextBox
 
 		if (breaks.length == 0)
 		{
-			g.drawCharacters(characters, 0, characters.length, x + margin + border / 2, y + margin + border / 2);
+			g.drawCharacters(characters, 0, characters.length, position.x + margin + border / 2, position.y + margin + border / 2);
 		} else
 		{
 			var line = 0;
 			var lastBreak = 0;
 			for (lineBreak in breaks) 
 			{
-                renderLine(g, lastBreak, lineBreak - lastBreak, x + margin + border / 2, y + margin + border / 2, line);
+                renderLine(g, lastBreak, lineBreak - lastBreak, position.x + margin + border / 2, position.y + margin + border / 2, line);
                 
 				lastBreak = lineBreak;
 				++line;
 			}
-            renderLine(g, lastBreak, characters.length - lastBreak, x + margin + border / 2, y + margin + border / 2, line);
+            renderLine(g, lastBreak, characters.length - lastBreak, position.x + margin + border / 2, position.y + margin + border / 2, line);
 		}
 		
 		if (Std.int(anim / 20) % 2 == 0 && isActive) 
@@ -252,7 +248,7 @@ class TextBox
 			var lastBreak = line > 0 ? breaks[line - 1] : 0;
 			var cursorX = font.widthOfCharacters(fontSize, characters, lastBreak, cursorIndex - lastBreak);
 			g.color = Color.Black;
-			g.drawLine(x + margin + cursorX + border / 2, y + margin + font.height(fontSize) * line - scrollOffset.y, x + margin + cursorX + border / 2, y + margin + font.height(fontSize) * (line + 1) - scrollOffset.y, 2);
+			g.drawLine(position.x + margin + cursorX + border / 2, position.y + margin + font.height(fontSize) * line - scrollOffset.y, position.x + margin + cursorX + border / 2, position.y + margin + font.height(fontSize) * (line + 1) - scrollOffset.y, 2);
 		} // blink caret
 
 		if (Std.int(anim / 5) % 2 == 0 && beginScrollOver && isActive) 
@@ -289,7 +285,7 @@ class TextBox
         if (useScrollBar)
 		{
             g.color = Color.fromBytes(40, 40, 40);
-            g.fillRect(x + w - scrollBarWidth + border / 2, y + border / 2, scrollBarWidth - border, h - border);
+            g.fillRect(position.x + size.x - scrollBarWidth + border / 2, position.y + border / 2, scrollBarWidth - border, size.y - border);
 
             var scrollFillColor = Color.fromBytes(80, 80, 80);
             if (isMouseDownScrollBar)
@@ -298,7 +294,7 @@ class TextBox
                 scrollFillColor = Color.fromBytes(150, 150, 150);
 
             g.color = scrollFillColor;
-            g.fillRect(x + w - scrollBarWidth + border / 2, scrollBarCurrentY + border / 2, scrollBarWidth - border, h / 2 - border);
+            g.fillRect(position.x + size.x - scrollBarWidth + border / 2, scrollBarCurrentY + border / 2, scrollBarWidth - border, size.y / 2 - border);
         }
 
 		_lastTime = System.time;
@@ -484,15 +480,15 @@ class TextBox
 	function mouseDown(button:Int, x:Int, y:Int):Void // mouseDown
 	{
 		mouseButtonDown = true;
-		if (y >= this.y && y <= this.y + this.h) {
-			if (x >= this.x + this.w - scrollBarWidth && x <= this.x + this.w) {
+		if (y >= position.y && y <= position.y + size.y) {
+			if (x >= position.x + size.x - scrollBarWidth && x <= position.x + size.x) {
 				isActive = true;
 				isMouseDownScrollBar = true;
 				scrollBarLastY = y - scrollBarCurrentY;
 			}
-			else if (x >= this.x && x <= this.x + this.w) {
+			else if (x >= position.x && x <= position.x + size.x) {
 				isActive = true;
-				selectionStart = selectionEnd = findIndex(x - this.x, y - this.y);
+				selectionStart = selectionEnd = findIndex(x - position.x, y - position.y);
 			}
 		}
 	} // mouseDown
@@ -501,7 +497,7 @@ class TextBox
 	{
 		mouseButtonDown = false;
 		beginScrollOver = false;
-		if (x >= this.x && x <= this.x + w - scrollBarWidth && y >= this.y && y <= this.y + h)
+		if (x >= position.x && x <= position.x + size.x - scrollBarWidth && y >= position.y && y <= position.y + size.y)
 		{
 			if (isMouseDownScrollBar)
 			{
@@ -510,7 +506,7 @@ class TextBox
 			}
 
 			isActive = true;
-			cursorIndex = findIndex(x - this.x, y - this.y);
+			cursorIndex = findIndex(x - position.x, y - position.y);
 			if (selecting)
 			{
 				selectionEnd = cursorIndex;
@@ -537,16 +533,16 @@ class TextBox
 		_mouseX = x;
 		_mouseY = y;
 
-		showEditingCursor = (x >= this.x && x <= this.x + w - scrollBarWidth && y >= this.y && y <= this.y + h);
+		showEditingCursor = (x >= position.x && x <= position.x + size.x - scrollBarWidth && y >= position.y && y <= position.y + size.y);
 
-		if (y >= this.y && y <= this.y + this.h)
+		if (y >= position.y && y <= position.y + size.x)
 		{
-			if (x >= this.x + this.w - scrollBarWidth && x <= this.x + this.w) 
+			if (x >= position.x + size.x - scrollBarWidth && x <= position.x + size.x) 
 			{
 				moveScrollBar(y);
 				isMouseOverScrollBar = true;
 			}
-			else if (x >= this.x && x <= this.x + this.w)
+			else if (x >= position.x && x <= position.x + size.x)
 			{
 				moveScrollBar(y);
 				isMouseOverScrollBar = false;
@@ -554,7 +550,7 @@ class TextBox
 				if (mouseButtonDown && selectionStart >= 0)
 				{
 					isMouseOverScrollBar = false;
-					cursorIndex = selectionEnd = findIndex(x - this.x, y - this.y);
+					cursorIndex = selectionEnd = findIndex(x - position.x, y - position.y);
 					if (cursorIndex < 0)
 						cursorIndex = 0;
 					else if (cursorIndex > characters.length)
@@ -576,7 +572,7 @@ class TextBox
 	function mouseWheel(steps:Int):Void // mouseWheel
 	{
 		scrollOffset.y += steps * 20;
-		if (scrollOffset.y < scrollTop || (breaks.length + 1) * font.height(fontSize) < h)
+		if (scrollOffset.y < scrollTop || (breaks.length + 1) * font.height(fontSize) < size.y)
 			scrollOffset.y = scrollTop;
 		else if (scrollOffset.y > scrollBottom)
 			scrollOffset.y = scrollBottom;
@@ -811,7 +807,7 @@ class TextBox
 	function scrollToCaret() // scrollToCaret
 	{
 		var line = findCursorLine();
-		var maxOfLines = Math.floor(h / font.height(fontSize));
+		var maxOfLines = Math.floor(size.y / font.height(fontSize));
 		var topLine = Std.int((scrollOffset.y / font.height(fontSize)));
 		var bottomLine = topLine + maxOfLines - 1;
 
@@ -834,20 +830,20 @@ class TextBox
 
 	function scroll() // scroll
 	{
-		var x_val = _mouseX < this.x ? 0 : _mouseX - this.x;
-		var y_val = _mouseY < this.y ? 0 : _mouseY - this.y;
-		if (_mouseY < this.y)
+		var x_val = _mouseX < position.x ? 0 : _mouseX - position.x;
+		var y_val = _mouseY < position.y ? 0 : _mouseY - position.y;
+		if (_mouseY < position.y)
 		{
-			var scroll_step = this.y - _mouseY;
+			var scroll_step = position.y - _mouseY;
 			scrollOffset.y -= scroll_step;
 			if (scrollOffset.y < scrollTop)
 				scrollOffset.y = scrollTop;
 			else if (scrollOffset.y > scrollBottom)
 				scrollOffset.y = scrollBottom;
 		}
-		else if (_mouseY > this.y + h)
+		else if (_mouseY > position.y + size.y)
 		{
-			var scroll_step = _mouseY - (this.y + h);
+			var scroll_step = _mouseY - (position.y + size.y);
 			scrollOffset.y += scroll_step;
 			if (scrollOffset.y < scrollTop)
 				scrollOffset.y = scrollTop;
@@ -868,12 +864,12 @@ class TextBox
 	{
 		var percent = scrollOffset.y / scrollBottom;
 
-		scrollBarCurrentY = percent * (this.h / 2) + this.y;
+		scrollBarCurrentY = percent * (size.y / 2) + position.y;
 
-		if (scrollBarCurrentY < this.y)
-			scrollBarCurrentY = this.y;
-		else if (scrollBarCurrentY > this.y + this.h / 2)
-			scrollBarCurrentY = this.y + this.h / 2;
+		if (scrollBarCurrentY < position.y)
+			scrollBarCurrentY = position.y;
+		else if (scrollBarCurrentY > position.y + size.y / 2)
+			scrollBarCurrentY = position.y + size.y / 2;
 		
 	} // updateScrollBarPosition
 
@@ -883,9 +879,9 @@ class TextBox
 			return;
 
 		var scrollMax = (breaks.length + 1) * font.height(fontSize);
-		scrollBottom = (scrollMax) - h + margin * 2;
+		scrollBottom = (scrollMax) - size.y + margin * 2;
 
-		if (scrollMax < h)
+		if (scrollMax < size.y)
 		{
 			scrollBarWidth = 0;
 			//format();
@@ -902,12 +898,12 @@ class TextBox
 		{
 			scrollBarCurrentY = y - scrollBarLastY;
 
-			if (scrollBarCurrentY < this.y)
-				scrollBarCurrentY = this.y;
-			else if (scrollBarCurrentY > this.h / 2 + this.y)
-				scrollBarCurrentY = this.h / 2 + this.y;
+			if (scrollBarCurrentY < position.y)
+				scrollBarCurrentY = position.y;
+			else if (scrollBarCurrentY > size.y / 2 + position.y)
+				scrollBarCurrentY = size.y / 2 + position.y;
 			
-			var percent = (scrollBarCurrentY - this.y) / (this.h / 2);
+			var percent = (scrollBarCurrentY - position.y) / (size.y / 2);
 			scrollOffset.y = percent * scrollBottom;
 		}
 	} // moveScrollBar
@@ -1049,7 +1045,7 @@ class TextBox
 		var i = 0;
 		while (i < characters.length) {
 			var width = font.widthOfCharacters(fontSize, characters, lastBreak, i - lastBreak);
-			if (width >= w - margin * 2 - scrollBarWidth) {
+			if (width >= size.x - margin * 2 - scrollBarWidth) {
 				if (lastChance < 0) {
 					lastChance = i - 1;
 				}
