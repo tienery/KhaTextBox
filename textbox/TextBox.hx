@@ -136,9 +136,9 @@ class TextBox
 			+ "sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, "
 			+ "sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. "
 			+ "Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.").toCharArray();
-		#end
-
+		
 		format();
+		#end
 
 		_lastTime = System.time;
         
@@ -230,15 +230,26 @@ class TextBox
 			g.drawCharacters(characters, 0, characters.length, position.x + margin + border / 2, position.y + margin + border / 2);
 		} else
 		{
-			var line = 0;
-			var lastBreak = 0;
-			for (lineBreak in breaks) 
+			var maxOfLines = Math.ceil(size.y / font.height(fontSize));
+			var topLine = Std.int((scrollOffset.y / font.height(fontSize)));
+			var bottomLine = topLine + maxOfLines;
+			var line = topLine;
+			var lastBreak = line > 0 ? breaks[line - 1] : 0;
+
+			if (line < 0)
+				line = 0;
+
+			for (i in topLine...bottomLine) 
 			{
+				var lineBreak = breaks[i];
                 renderLine(g, lastBreak, lineBreak - lastBreak, position.x + margin + border / 2, position.y + margin + border / 2, line);
                 
 				lastBreak = lineBreak;
 				++line;
 			}
+			line = breaks.length;
+			lastBreak = breaks[line - 1];
+			
             renderLine(g, lastBreak, characters.length - lastBreak, position.x + margin + border / 2, position.y + margin + border / 2, line);
 		}
 		
