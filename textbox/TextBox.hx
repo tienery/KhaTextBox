@@ -85,7 +85,7 @@ class TextBox
     private function set_useScrollBar(value:Bool):Bool 
 	{
         _useScrollBar = value;
-        if (value == true) {
+        if (value) {
             scrollBarWidth = 25;
         } else {
             scrollBarWidth = 0;
@@ -200,11 +200,19 @@ class TextBox
 				if (line == startLine) {
 					x1 = x + margin + startX;
 				}
-				var lineWidth = font.widthOfCharacters(fontSize, characters, breaks[line - 1], breaks[line] - breaks[line - 1]);
-				var x2 = x + lineWidth + 4;
+				
+				var lineWidth = 0.0;
+
+				if (line == 0)
+					lineWidth = font.widthOfCharacters(fontSize, characters, 0, breaks[0]);
+				else
+					lineWidth = font.widthOfCharacters(fontSize, characters, breaks[line - 1], breaks[line] - breaks[line - 1]);
+				
+				var x2 = x + lineWidth + 5;
 				if (line == endLine) {
 					x2 = x + margin + endX;
 				}
+
 				g.fillRect(x1, y + margin + line * font.height(fontSize) - scrollOffset, x2 - x1, font.height(fontSize));
 			}
 		}
@@ -222,12 +230,12 @@ class TextBox
 			var lastBreak = 0;
 			for (lineBreak in breaks) 
 			{
-                renderLine(g, characters, lastBreak, lineBreak - lastBreak, x + margin, y + margin, line);
+                renderLine(g, lastBreak, lineBreak - lastBreak, x + margin, y + margin, line);
                 
 				lastBreak = lineBreak;
 				++line;
 			}
-            renderLine(g, characters, lastBreak, characters.length - lastBreak, x + margin, y + margin, line);
+            renderLine(g, lastBreak, characters.length - lastBreak, x + margin, y + margin, line);
 		}
 		
 		if (Std.int(anim / 20) % 2 == 0 && isActive) 
@@ -864,7 +872,7 @@ class TextBox
 		}
 	} // checkScrollBar
 
-	function moveScrollBar(y:Int)
+	function moveScrollBar(y:Int) // moveScrollBar
 	{
 		if (isMouseDownScrollBar)
 		{
@@ -878,7 +886,7 @@ class TextBox
 			var percent = (scrollBarCurrentY - this.y) / (this.h / 2);
 			scrollOffset = percent * scrollBottom;
 		}
-	}
+	} // moveScrollBar
 
 
 	/**
@@ -1092,8 +1100,9 @@ class TextBox
 	**/
     
     // this can (should) be refactored a little - this is initial implementation / iteration
-    function renderLine(g:Graphics, chars:Array<Int>, start:Int, length:Int, x:Float, y:Float, line:Int) //renderLine
+    function renderLine(g:Graphics, start:Int, end:Int, x:Float, y:Float, line:Int) //renderLine
 	{
+		var chars = characters;
         var startIndex = selectionStart;
         var endIndex = selectionEnd;
         if (endIndex < startIndex) {
@@ -1101,7 +1110,7 @@ class TextBox
             startIndex = endIndex;
             endIndex = temp;
         }
-        
+
         g.color = textColor;
         if (hasSelection()) {
             var lineStartIndex = 0;
@@ -1114,10 +1123,10 @@ class TextBox
             var endInRange = (endIndex >= lineStartIndex && endIndex <= lineEndIndex);
             
             if (startInRange == false && endInRange == false) {
-                if (start >= startIndex && start + length <= endIndex) {
+                if (start >= startIndex && start + end <= endIndex) {
                     g.color = highlightTextColor;
                 }
-                g.drawCharacters(chars, start, length, x, y + line * font.height(fontSize) - scrollOffset);
+                g.drawCharacters(chars, start, end, x, y + line * font.height(fontSize) - scrollOffset);
             } else if (startInRange == true && endInRange == true) {
                 g.drawCharacters(chars, start, startIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
               
@@ -1151,10 +1160,10 @@ class TextBox
                 g.color = textColor;
                 g.drawCharacters(chars, start, lineEndIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
             } else {
-                g.drawCharacters(chars, start, length, x, y + line * font.height(fontSize) - scrollOffset);
-            } 
+                g.drawCharacters(chars, start, end, x, y + line * font.height(fontSize) - scrollOffset);
+            }
         } else {
-            g.drawCharacters(chars, start, length, x, y + line * font.height(fontSize) - scrollOffset);
+            g.drawCharacters(chars, start, end, x, y + line * font.height(fontSize) - scrollOffset);
         }
     } //renderLine
 
