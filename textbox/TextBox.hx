@@ -65,9 +65,12 @@ class TextBox
 
 	public var position:FV2;
 	public var size:FV2;
+
+	public var wordWrap:Bool;
+	public var multiline:Bool;
+
 	public var font:Font;
 	public var fontSize:Int;
-
 	public var border:Int;
 	public var borderColor:Int = -1;
 	public var backColor:Int = -1;
@@ -120,6 +123,8 @@ class TextBox
 		keyCodeDown = -1;
 		_mouse = Mouse.get();
 		_mouse.notify(mouseDown, mouseUp, mouseMove, mouseWheel, null);
+
+		wordWrap = multiline = true;
 
 		System.notifyOnCutCopyPaste(cut, copy, paste);
 

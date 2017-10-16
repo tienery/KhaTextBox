@@ -12,8 +12,8 @@
 - Allow scroll-bar to be visible or not
 
 Refactor break-handling:
-  * Make word-wrapping optional.
-  * Make multiline optional.
+  * - Make word-wrapping optional.
+  * - Make multiline optional.
   * If word-wrapping is off and multiline is on, make sure (4) in scroll refactor is enabled.
   * If word-wrapping is on and multiline is off, word-wrapping should not do anything. 
   * If multiline is off, pasting content with `\n` should be trimmed and replaced with spaces.
