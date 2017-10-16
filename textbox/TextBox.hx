@@ -4,6 +4,7 @@ import kha.Color;
 import kha.Font;
 import kha.Scheduler;
 import kha.graphics2.Graphics;
+import kha.math.FastVector2 in FV2;
 import kha.input.KeyCode;
 import kha.input.Keyboard;
 import kha.input.Mouse;
@@ -42,7 +43,7 @@ class TextBox
 	var mouseButtonDown:Bool;
 	var showEditingCursor:Bool;
 
-	var scrollOffset:Float;
+	var scrollOffset:FV2;
 	var scrollTop:Float;
 	var scrollBottom:Float;
 	var beginScrollOver:Bool;
@@ -106,7 +107,8 @@ class TextBox
 		this.fontSize = fontSize;
 		scrollBarWidth = 25;
 		scrollBarCurrentY = y;
-		scrollTop = scrollBottom = scrollOffset = 0;
+		scrollTop = scrollBottom = 0;
+		scrollOffset = new FV2(0, 0);
 		anim = 0;
 		characters = [];
 		beginScrollOver = false;
@@ -213,7 +215,7 @@ class TextBox
 					x2 = x + margin + endX;
 				}
 
-				g.fillRect(x1, y + margin + line * font.height(fontSize) - scrollOffset, x2 - x1, font.height(fontSize));
+				g.fillRect(x1, y + margin + line * font.height(fontSize) - scrollOffset.y, x2 - x1, font.height(fontSize));
 			}
 		}
 
@@ -243,7 +245,7 @@ class TextBox
 			var line = findCursorLine();
 			var lastBreak = line > 0 ? breaks[line - 1] : 0;
 			var cursorX = font.widthOfCharacters(fontSize, characters, lastBreak, cursorIndex - lastBreak);
-			g.drawLine(x + margin + cursorX, y + margin + font.height(fontSize) * line - scrollOffset, x + margin + cursorX, y + margin + font.height(fontSize) * (line + 1) - scrollOffset, 2);
+			g.drawLine(x + margin + cursorX, y + margin + font.height(fontSize) * line - scrollOffset.y, x + margin + cursorX, y + margin + font.height(fontSize) * (line + 1) - scrollOffset.y, 2);
 		} // blink caret
 
 		if (Std.int(anim / 5) % 2 == 0 && beginScrollOver && isActive) 
@@ -551,11 +553,11 @@ class TextBox
 
 	function mouseWheel(steps:Int):Void // mouseWheel
 	{
-		scrollOffset += steps * 20;
-		if (scrollOffset < scrollTop || (breaks.length + 1) * font.height(fontSize) < h)
-			scrollOffset = scrollTop;
-		else if (scrollOffset > scrollBottom)
-			scrollOffset = scrollBottom;
+		scrollOffset.y += steps * 20;
+		if (scrollOffset.y < scrollTop || (breaks.length + 1) * font.height(fontSize) < h)
+			scrollOffset.y = scrollTop;
+		else if (scrollOffset.y > scrollBottom)
+			scrollOffset.y = scrollBottom;
 		
 		updateScrollBarPosition();
 	} // mouseWheel
@@ -788,22 +790,22 @@ class TextBox
 	{
 		var line = findCursorLine();
 		var maxOfLines = Math.floor(h / font.height(fontSize));
-		var topLine = Std.int((scrollOffset / font.height(fontSize)));
+		var topLine = Std.int((scrollOffset.y / font.height(fontSize)));
 		var bottomLine = topLine + maxOfLines - 1;
 
 		if (line > bottomLine)
 		{
-			scrollOffset += font.height(fontSize) * 5;
+			scrollOffset.y += font.height(fontSize) * 5;
 		}
 		else if (line < topLine)
 		{
-			scrollOffset -= font.height(fontSize) * 5;
+			scrollOffset.y -= font.height(fontSize) * 5;
 		}
 
-		if (scrollOffset > scrollBottom)
-			scrollOffset = scrollBottom;
-		else if (scrollOffset < 0)
-			scrollOffset = 0;
+		if (scrollOffset.y > scrollBottom)
+			scrollOffset.y = scrollBottom;
+		else if (scrollOffset.y < 0)
+			scrollOffset.y = 0;
 		
 		updateScrollBarPosition();
 	} // scrollToCaret
@@ -815,20 +817,20 @@ class TextBox
 		if (_mouseY < this.y)
 		{
 			var scroll_step = this.y - _mouseY;
-			scrollOffset -= scroll_step;
-			if (scrollOffset < scrollTop)
-				scrollOffset = scrollTop;
-			else if (scrollOffset > scrollBottom)
-				scrollOffset = scrollBottom;
+			scrollOffset.y -= scroll_step;
+			if (scrollOffset.y < scrollTop)
+				scrollOffset.y = scrollTop;
+			else if (scrollOffset.y > scrollBottom)
+				scrollOffset.y = scrollBottom;
 		}
 		else if (_mouseY > this.y + h)
 		{
 			var scroll_step = _mouseY - (this.y + h);
-			scrollOffset += scroll_step;
-			if (scrollOffset < scrollTop)
-				scrollOffset = scrollTop;
-			else if (scrollOffset > scrollBottom)
-				scrollOffset = scrollBottom;
+			scrollOffset.y += scroll_step;
+			if (scrollOffset.y < scrollTop)
+				scrollOffset.y = scrollTop;
+			else if (scrollOffset.y > scrollBottom)
+				scrollOffset.y = scrollBottom;
 		}
 
 		cursorIndex = selectionEnd = findIndex(x_val, y_val);
@@ -842,7 +844,7 @@ class TextBox
 
 	function updateScrollBarPosition() // updateScrollBarPosition
 	{
-		var percent = scrollOffset / scrollBottom;
+		var percent = scrollOffset.y / scrollBottom;
 
 		scrollBarCurrentY = percent * (this.h / 2) + this.y;
 
@@ -884,7 +886,7 @@ class TextBox
 				scrollBarCurrentY = this.h / 2 + this.y;
 			
 			var percent = (scrollBarCurrentY - this.y) / (this.h / 2);
-			scrollOffset = percent * scrollBottom;
+			scrollOffset.y = percent * scrollBottom;
 		}
 	} // moveScrollBar
 
@@ -1068,7 +1070,7 @@ class TextBox
 
 	function findIndex(x:Float, y:Float):Int // findIndex
 	{
-		var line = Std.int((y - margin + scrollOffset) / font.height(fontSize));
+		var line = Std.int((y - margin + scrollOffset.y) / font.height(fontSize));
 		if (line < 0) {
 			line = 0;
 		}
@@ -1126,44 +1128,44 @@ class TextBox
                 if (start >= startIndex && start + end <= endIndex) {
                     g.color = highlightTextColor;
                 }
-                g.drawCharacters(chars, start, end, x, y + line * font.height(fontSize) - scrollOffset);
+                g.drawCharacters(chars, start, end, x, y + line * font.height(fontSize) - scrollOffset.y);
             } else if (startInRange == true && endInRange == true) {
-                g.drawCharacters(chars, start, startIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+                g.drawCharacters(chars, start, startIndex - start, x, y + line * font.height(fontSize) - scrollOffset.y);
               
                 x += font.widthOfCharacters(fontSize, chars, start, startIndex - start);
                 start += startIndex - start;
                 
                 g.color = highlightTextColor;
-                g.drawCharacters(chars, start, endIndex - startIndex, x, y + line * font.height(fontSize) - scrollOffset);
+                g.drawCharacters(chars, start, endIndex - startIndex, x, y + line * font.height(fontSize) - scrollOffset.y);
 
                 x += font.widthOfCharacters(fontSize, chars, start, endIndex - startIndex);
                 start += endIndex - startIndex;
                 
                 g.color = textColor;
-                g.drawCharacters(chars, start, lineEndIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+                g.drawCharacters(chars, start, lineEndIndex - start, x, y + line * font.height(fontSize) - scrollOffset.y);
             } else if (startInRange == true && endInRange == false) {
-                g.drawCharacters(chars, start, startIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+                g.drawCharacters(chars, start, startIndex - start, x, y + line * font.height(fontSize) - scrollOffset.y);
               
                 x += font.widthOfCharacters(fontSize, chars, start, startIndex - start);
                 start += startIndex - start;
                 
                 g.color = highlightTextColor;
-                g.drawCharacters(chars, start, lineEndIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+                g.drawCharacters(chars, start, lineEndIndex - start, x, y + line * font.height(fontSize) - scrollOffset.y);
             } else if (startInRange == false && endInRange == true) {
                 g.color = highlightTextColor;
-                g.drawCharacters(chars, start, endIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+                g.drawCharacters(chars, start, endIndex - start, x, y + line * font.height(fontSize) - scrollOffset.y);
                 
                 x += font.widthOfCharacters(fontSize, chars, start, endIndex - start);
                 start += endIndex - start;
 
                 
                 g.color = textColor;
-                g.drawCharacters(chars, start, lineEndIndex - start, x, y + line * font.height(fontSize) - scrollOffset);
+                g.drawCharacters(chars, start, lineEndIndex - start, x, y + line * font.height(fontSize) - scrollOffset.y);
             } else {
-                g.drawCharacters(chars, start, end, x, y + line * font.height(fontSize) - scrollOffset);
+                g.drawCharacters(chars, start, end, x, y + line * font.height(fontSize) - scrollOffset.y);
             }
         } else {
-            g.drawCharacters(chars, start, end, x, y + line * font.height(fontSize) - scrollOffset);
+            g.drawCharacters(chars, start, end, x, y + line * font.height(fontSize) - scrollOffset.y);
         }
     } //renderLine
 
