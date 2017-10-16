@@ -466,10 +466,12 @@ class TextBox
 		mouseButtonDown = true;
 		if (y >= this.y && y <= this.y + this.h) {
 			if (x >= this.x + this.w - scrollBarWidth && x <= this.x + this.w) {
+				isActive = true;
 				isMouseDownScrollBar = true;
 				scrollBarLastY = y - scrollBarCurrentY;
 			}
 			else if (x >= this.x && x <= this.x + this.w) {
+				isActive = true;
 				selectionStart = selectionEnd = findIndex(x - this.x, y - this.y);
 			}
 		}
