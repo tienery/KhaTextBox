@@ -333,7 +333,7 @@ class TextBox
 
 		g.disableScissor();
 
-        if (useScrollBar)
+        if (useScrollBar && scrollBottom > 0)
 		{
             g.color = Color.fromBytes(40, 40, 40);
             g.fillRect(position.x + size.x - scrollBarWidth + border / 2, position.y + border / 2, scrollBarWidth - border, size.y - border);
@@ -939,11 +939,12 @@ class TextBox
 			return;
 
 		var scrollMax = (breaks.length + 1) * font.height(fontSize);
-		scrollBottom = (scrollMax) - size.y + margin * 2;
+		scrollBottom = scrollMax - size.y + margin * 2;
 
 		if (scrollMax < size.y)
 		{
 			scrollBarWidth = 0;
+			scrollBottom = 0;
 			//format();
 		}
 		else
