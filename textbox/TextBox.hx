@@ -866,18 +866,16 @@ class TextBox
 
 	function scrollToCaret() // scrollToCaret
 	{
-		var line = findCursorLine();
-		var maxOfLines = Math.floor(size.y / font.height(fontSize));
-		var topLine = Std.int((scrollOffset.y / font.height(fontSize)));
-		var bottomLine = topLine + maxOfLines - 1;
+		var caretPos = getIndexPosition(cursorIndex);
 
-		if (line > bottomLine)
+		// vertical scrolling
+		if (caretPos.y > scrollOffset.y + size.y - font.height(fontSize))
 		{
-			scrollOffset.y += font.height(fontSize) * 5;
+			scrollOffset.y = caretPos.y - size.y + font.height(fontSize) + margin;
 		}
-		else if (line < topLine)
+		else if (caretPos.y < scrollOffset.y)
 		{
-			scrollOffset.y -= font.height(fontSize) * 5;
+			scrollOffset.y = caretPos.y - margin;
 		}
 
 		if (scrollOffset.y > scrollBottom)
@@ -1155,6 +1153,20 @@ class TextBox
 			characters = getText().split("\n").join("").split("\r").join("").toCharArray();
 		}
 	} // format
+
+	function getIndexPosition(index:Int):FV2 // getIndexPosition
+	{
+		var result = new FV2(0, 0);
+		var line = findLine(index);
+		var startBreak = line > 0 ? breaks[line - 1] : 0;
+		
+		var x = font.widthOfCharacters(fontSize, characters, startBreak, index - startBreak);
+		var y = line * font.height(fontSize) + margin;
+
+		result = new FV2(x, y);
+
+		return result;
+	} // getIndexPosition
 
 	function findLine(index:Int):Int // findLine 
 	{
