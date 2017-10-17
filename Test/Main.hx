@@ -16,6 +16,7 @@ class Main {
 			Assets.loadEverything(function () {
 				textBox = new TextBox(50, 50, 400, 400, Assets.fonts.LiberationSans_Regular, 24);
 				textBox.border = 3;
+				textBox.multiline = false;
 				System.notifyOnRender(render);
 				Scheduler.addTimeTask(textBox.update, 0, 1 / 60);
 			});

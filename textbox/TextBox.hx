@@ -67,7 +67,9 @@ class TextBox
 	public var size:FV2;
 
 	public var wordWrap:Bool;
-	public var multiline:Bool;
+	public var multiline(get, set):Bool;
+
+	public var useScrollBar(get, set):Bool;
 
 	public var font:Font;
 	public var fontSize:Int;
@@ -83,12 +85,8 @@ class TextBox
 	**/
 
 	var _useScrollBar:Bool = true;
-    public var useScrollBar(get, set):Bool;
-    function get_useScrollBar():Bool 
-	{
-        return _useScrollBar;
-    }
-    function set_useScrollBar(val):Bool 
+    function get_useScrollBar() return _useScrollBar;
+    function set_useScrollBar(val) 
 	{
         _useScrollBar = val;
         if (val)
@@ -97,6 +95,29 @@ class TextBox
             scrollBarWidth = 0;
         return val;
     }
+
+	var _multiline:Bool;
+	var _prevHeight:Float;
+	function get_multiline() return _multiline;
+	function set_multiline(val)
+	{
+		_multiline = val;
+		if (val)
+		{
+			if (_prevHeight != null)
+				size.y = _prevHeight;
+			
+			useScrollBar = true;
+			return _multiline;
+		}
+		else
+		{
+			_prevHeight = size.y;
+			size.y = font.height(fontSize) + margin * 2;
+			useScrollBar = false;
+			return _multiline;
+		}
+	}
 
 	/**
 	* Create a new `TextBox`.
