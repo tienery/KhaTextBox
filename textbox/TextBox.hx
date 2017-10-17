@@ -287,10 +287,11 @@ class TextBox
 				lastBreak = lineBreak;
 				++line;
 			}
+
 			line = breaks.length;
 			lastBreak = breaks[line - 1];
-			
-            renderLine(g, lastBreak, characters.length - lastBreak, position.x + margin + border / 2, position.y + margin + border / 2, line);
+		
+			renderLine(g, lastBreak, characters.length - lastBreak, position.x + margin + border / 2, position.y + margin + border / 2, line);
 		}
 		
 		if (Std.int(anim / 20) % 2 == 0 && isActive) 
@@ -1330,7 +1331,10 @@ class TextBox
             if (line > 0) {
                 lineStartIndex = breaks[line - 1];
             }
-            var lineEndIndex = line > breaks.length ? breaks[breaks.length - 1] : breaks[line];
+			var lineEndIndex = characters.length;
+            if (line < breaks.length) {
+                lineEndIndex = breaks[line];
+            }
             
             var startInRange = (startIndex >= lineStartIndex && startIndex <= lineEndIndex);
             var endInRange = (endIndex >= lineStartIndex && endIndex <= lineEndIndex);
@@ -1371,9 +1375,7 @@ class TextBox
                 
                 g.color = textColor;
                 g.drawCharacters(chars, start, lineEndIndex - start, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
-            } else {
-                g.drawCharacters(chars, start, end, x, y + line * font.height(fontSize) - scrollOffset.y);
-            }
+			}
         } else {
             g.drawCharacters(chars, start, end, x, y + line * font.height(fontSize) - scrollOffset.y);
         }
