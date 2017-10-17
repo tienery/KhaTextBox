@@ -25,6 +25,7 @@ class TextBox
 	var _mouse:Mouse;
 	var _dt:Float;
 	var _lastTime:Float;
+	var _outOnce:Bool;
 
 	var characters:Array<Int>;
 	var breaks:Array<Int>;
@@ -66,7 +67,7 @@ class TextBox
 	public var position:FV2;
 	public var size:FV2;
 
-	public var wordWrap:Bool;
+	public var wordWrap(get, set):Bool;
 	public var multiline(get, set):Bool;
 
 	public var useScrollBar(get, set):Bool;
@@ -108,15 +109,26 @@ class TextBox
 				size.y = _prevHeight;
 			
 			useScrollBar = true;
-			return _multiline;
 		}
 		else
 		{
 			_prevHeight = size.y;
 			size.y = font.height(fontSize) + margin * 2;
 			useScrollBar = false;
-			return _multiline;
 		}
+
+		format();
+
+		return _multiline;
+	}
+
+	var _wordWrap:Bool;
+	function get_wordWrap() return _wordWrap;
+	function set_wordWrap(val)
+	{
+		_wordWrap = val;
+		format();
+		return _wordWrap;
 	}
 
 	/**
@@ -167,6 +179,8 @@ class TextBox
 		#end
 
 		_lastTime = System.time;
+
+		_outOnce = false;
         
 		border = 1;
 		borderColor = Color.Black;
@@ -521,10 +535,12 @@ class TextBox
 			if (x >= position.x + size.x - scrollBarWidth && x <= position.x + size.x) {
 				isActive = true;
 				isMouseDownScrollBar = true;
+				_outOnce = false;
 				scrollBarLastY = y - scrollBarCurrentY;
 			}
 			else if (x >= position.x && x <= position.x + size.x) {
 				isActive = true;
+				_outOnce = false;
 				selectionStart = selectionEnd = findIndex(x - position.x, y - position.y);
 			}
 		}
@@ -542,6 +558,7 @@ class TextBox
 				return;
 			}
 
+			_outOnce = false;
 			isActive = true;
 			cursorIndex = findIndex(x - position.x, y - position.y);
 			if (selecting)
@@ -559,7 +576,10 @@ class TextBox
 		}
 		else
 		{
-			isActive = false;
+			if (!hasSelection() || _outOnce)
+				isActive = false;
+			
+			_outOnce = true;
 		}
 
 		isMouseDownScrollBar = false;
@@ -608,13 +628,16 @@ class TextBox
 
 	function mouseWheel(steps:Int):Void // mouseWheel
 	{
-		scrollOffset.y += steps * 20;
-		if (scrollOffset.y < scrollTop || (breaks.length + 1) * font.height(fontSize) < size.y)
-			scrollOffset.y = scrollTop;
-		else if (scrollOffset.y > scrollBottom)
-			scrollOffset.y = scrollBottom;
-		
-		updateScrollBarPosition();
+		if (multiline)
+		{
+			scrollOffset.y += steps * 20;
+			if (scrollOffset.y < scrollTop || (breaks.length + 1) * font.height(fontSize) < size.y)
+				scrollOffset.y = scrollTop;
+			else if (scrollOffset.y > scrollBottom)
+				scrollOffset.y = scrollBottom;
+			
+			updateScrollBarPosition();
+		}
 	} // mouseWheel
 
 	function keyPress(character:String):Void // keyPress
@@ -1030,24 +1053,19 @@ class TextBox
 
 	function removeSelection():Void // removeSelection
 	{
-		var count = selectionEnd - selectionStart;
-		if (count < 0)
-			count = -count;
-		
-		var startIndex = cursorIndex;
-		if (selectionStart > selectionEnd)
+		var startIndex = selectionStart;
+		var endIndex = selectionEnd;
+		if (endIndex < startIndex)
 		{
-			if (cursorIndex > selectionEnd)
-				startIndex = selectionEnd;
-		}
-		else if (selectionEnd > selectionStart)
-		{
-			if (cursorIndex > selectionStart)
-				startIndex = selectionStart;
+			var temp = endIndex;
+			endIndex = startIndex;
+			startIndex = temp;
 		}
 
 		if (startIndex < 0)
 			startIndex = 0;
+		
+		var count = endIndex - startIndex;
 
 		characters.splice(startIndex, count);
 		cursorIndex = (selectionStart > selectionEnd ? selectionEnd : selectionStart);
@@ -1076,41 +1094,74 @@ class TextBox
 
 	function format():Void // format
 	{
-		var lastChance = -1;
-		breaks = [];
-		var lastBreak = 0;
-		var i = 0;
-		while (i < characters.length) {
-			var width = font.widthOfCharacters(fontSize, characters, lastBreak, i - lastBreak);
-			if (width >= size.x - margin * 2 - scrollBarWidth) {
-				if (lastChance < 0) {
-					lastChance = i - 1;
+		if (multiline && wordWrap)
+		{
+			var lastChance = -1;
+			breaks = [];
+			var lastBreak = 0;
+			var i = 0;
+			while (i < characters.length)
+			{
+				var width = font.widthOfCharacters(fontSize, characters, lastBreak, i - lastBreak);
+				if (width >= size.x - margin * 2 - scrollBarWidth)
+				{
+					if (lastChance < 0)
+					{
+						lastChance = i - 1;
+					}
+					breaks.push(lastChance + 1);
+					lastBreak = lastChance + 1;
+					i = lastBreak;
+					lastChance = -1;
 				}
-				breaks.push(lastChance + 1);
-				lastBreak = lastChance + 1;
-				i = lastBreak;
-				lastChance = -1;
+
+				if (characters[i] == " ".charCodeAt(0))
+				{
+					lastChance = i;
+				}
+				else if (characters[i] == "\n".charCodeAt(0) || characters[i] == "\r".charCodeAt(0))
+				{
+					breaks.push(i + 1);
+					lastBreak = i + 1;
+					lastChance = -1;
+				}
+				++i;
 			}
 
-			if (characters[i] == " ".charCodeAt(0)) {
-				lastChance = i;
-			}
-			else if (characters[i] == "\n".charCodeAt(0) || characters[i] == "\r".charCodeAt(0)) {
-				breaks.push(i + 1);
-				lastBreak = i + 1;
-				lastChance = -1;
-			}
-			++i;
+			checkScrollBar();
 		}
+		else if (multiline)
+		{
+			var lastChance = -1;
+			breaks = [];
+			var lastBreak = 0;
+			var i = 0;
+			while (i < characters.length)
+			{
+				if (characters[i] == "\n".charCodeAt(0) || characters[i] == "\r".charCodeAt(0))
+				{
+					breaks.push(i + 1);
+					lastBreak = i + 1;
+					lastChance = -1;
+				}
+				++i;
+			}
 
-		checkScrollBar();
+			checkScrollBar();
+		}
+		else
+		{
+			characters = getText().split("\n").join("").split("\r").join("").toCharArray();
+		}
 	} // format
 
 	function findLine(index:Int):Int // findLine 
 	{
 		var line = 0;
-		for (lineBreak in breaks) {
-			if (lineBreak > index) {
+		for (lineBreak in breaks) 
+		{
+			if (lineBreak > index) 
+			{
 				break;
 			}
 			++line;

@@ -15,9 +15,9 @@ Refactor break-handling:
   * - Make word-wrapping optional.
   * - Make multiline optional.
   * If word-wrapping is off and multiline is on, make sure (4) in scroll refactor is enabled.
-  * If word-wrapping is on and multiline is off, word-wrapping should not do anything. 
+  * - If word-wrapping is on and multiline is off, word-wrapping should not do anything. 
   * If multiline is off, pasting content with `\n` should be trimmed and replaced with spaces.
-  * If multiline is off and word-wrapping if off, this should simulate a single-line textbox.
+  * - If multiline is off and word-wrapping if off, this should simulate a single-line textbox.
 
 Refactor scrolling functionality:
   * - Convert scrollOffset to a `FastVector2`.
