@@ -94,7 +94,6 @@ class TextBox
             scrollBarWidth = 25;
         else
             scrollBarWidth = 0;
-        }
         format();
         return val;
     }
