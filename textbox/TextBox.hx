@@ -10,6 +10,7 @@ import kha.input.Keyboard;
 import kha.input.Mouse;
 import kha.System;
 import kha.Scheduler;
+import textbox.ScrollBar.HitResult;
 
 using kha.StringExtensions;
 
@@ -48,16 +49,10 @@ class TextBox
 	var scrollTop:Float;
 	var scrollBottom:Float;
 	var beginScrollOver:Bool;
-	var isMouseOverScrollBar:Bool;
-	var isMouseDownScrollBar:Bool;
-
-	var scrollBarLastY:Float;
-	var scrollBarCurrentY:Float;
 
 	var keyCodeDown:Int;
 	var ctrl:Bool;
 
-	static var scrollBarWidth = 25;
 	static inline var margin:Float = 10;
 
 	/**
@@ -85,15 +80,18 @@ class TextBox
 	* Public properties
 	**/
 
-	var _useScrollBar:Bool = true;
-    function get_useScrollBar() return _useScrollBar;
+    private var _scrollBar:ScrollBar = null;
+    function get_useScrollBar() return (_scrollBar != null);
     function set_useScrollBar(val) 
 	{
-        _useScrollBar = val;
-        if (val)
-            scrollBarWidth = 25;
-        else
-            scrollBarWidth = 0;
+        if (val) {
+            if (_scrollBar == null) {
+                _scrollBar = new ScrollBar(this);
+                _scrollBar.onChange = onScrollBarChange;
+            }
+        } else {
+            _scrollBar = null;
+        }
         format();
         return val;
     }
@@ -108,14 +106,11 @@ class TextBox
 		{
 			if (_prevHeight != null)
 				size.y = _prevHeight;
-			
-			useScrollBar = true;
 		}
 		else
 		{
 			_prevHeight = size.y;
 			size.y = font.height(fontSize) + margin * 2;
-			useScrollBar = false;
 		}
 
 		format();
@@ -141,8 +136,6 @@ class TextBox
 		size = new FV2(w, h);
 		this.font = font;
 		this.fontSize = fontSize;
-		scrollBarWidth = 25;
-		scrollBarCurrentY = y;
 		scrollTop = scrollBottom = 0;
 		scrollOffset = new FV2(0, 0);
 		anim = 0;
@@ -161,7 +154,8 @@ class TextBox
 		wordWrap = multiline = true;
 
 		System.notifyOnCutCopyPaste(cut, copy, paste);
-
+        useScrollBar = true;
+        
 		#if test
 		characters = ("Lorem ipsum dolor sit amet, consetetur sadipscing elitr, "
 			+ "sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, "
@@ -192,6 +186,11 @@ class TextBox
 	} // constructor
 
 
+    private function onScrollBarChange() {
+        var percent = (_scrollBar.value - position.y) / (size.y / 2);
+        scrollOffset.y = _scrollBar.percentValue * scrollBottom;
+    }
+    
 	/**
 	* Public functions
 	**/
@@ -310,7 +309,7 @@ class TextBox
 			scroll();
 		}
 
-		if (showEditingCursor && !isMouseDownScrollBar)
+		if (showEditingCursor)
 		{
 			_mouse.hideSystemCursor();
 			var fontHeight = font.height(fontSize);
@@ -338,17 +337,7 @@ class TextBox
 
         if (useScrollBar && scrollBottom > 0)
 		{
-            g.color = Color.fromBytes(40, 40, 40);
-            g.fillRect(position.x + size.x - scrollBarWidth + border / 2, position.y + border / 2, scrollBarWidth - border, size.y - border);
-
-            var scrollFillColor = Color.fromBytes(80, 80, 80);
-            if (isMouseDownScrollBar)
-                scrollFillColor = Color.fromBytes(20, 20, 20);
-            else if (isMouseOverScrollBar)
-                scrollFillColor = Color.fromBytes(150, 150, 150);
-
-            g.color = scrollFillColor;
-            g.fillRect(position.x + size.x - scrollBarWidth + border / 2, scrollBarCurrentY + border / 2, scrollBarWidth - border, size.y / 2 - border);
+            _scrollBar.render(g);
         }
 
 		_lastTime = System.time;
@@ -537,18 +526,10 @@ class TextBox
 	function mouseDown(button:Int, x:Int, y:Int):Void // mouseDown
 	{
 		mouseButtonDown = true;
-		if (y >= position.y && y <= position.y + size.y) {
-			if (x >= position.x + size.x - scrollBarWidth && x <= position.x + size.x) {
-				isActive = true;
-				isMouseDownScrollBar = true;
-				_outOnce = false;
-				scrollBarLastY = y - scrollBarCurrentY;
-			}
-			else if (x >= position.x && x <= position.x + size.x) {
-				isActive = true;
-				_outOnce = false;
-				selectionStart = selectionEnd = findIndex(x - position.x, y - position.y);
-			}
+        if (inBounds(x, y)) {            
+            isActive = true;
+            _outOnce = false;
+            selectionStart = selectionEnd = findIndex(x - position.x, y - position.y);
 		}
 	} // mouseDown
 
@@ -558,12 +539,6 @@ class TextBox
 		beginScrollOver = false;
 		if (x >= position.x && x <= position.x + size.x - scrollBarWidth && y >= position.y && y <= position.y + size.y)
 		{
-			if (isMouseDownScrollBar)
-			{
-				isMouseDownScrollBar = false;
-				return;
-			}
-
 			_outOnce = false;
 			isActive = true;
 			cursorIndex = findIndex(x - position.x, y - position.y);
@@ -587,49 +562,43 @@ class TextBox
 			
 			_outOnce = true;
 		}
-
-		isMouseDownScrollBar = false;
 	} // mouseUp
 
+    private function inBounds(x:Int, y:Int):Bool {
+        var cx = size.x - scrollBarWidth;
+        return (x >= position.x && x <= position.x + cx && y >= position.y  && y <= position.y + size.y);
+    }
+
+    private function inScrollBounds(x:Int, y:Int):Bool {
+        if (_scrollBar == null || _scrollBar.visible == false) {
+            return false;
+        }
+        
+        return (_scrollBar.hitTest(x, y) != HitResult.NONE);
+    }
+    
 	function mouseMove(x:Int, y:Int, mx:Int, my:Int):Void // mouseMove
 	{
 		_mouseX = x;
 		_mouseY = y;
 
-		showEditingCursor = (x >= position.x && x <= position.x + size.x - scrollBarWidth && y >= position.y && y <= position.y + size.y);
+        showEditingCursor = inBounds(x, y);
 
-		if (y >= position.y && y <= position.y + size.y && x >= position.x && x <= position.x + size.x)
+        if (showEditingCursor)
 		{
-			if (x >= position.x + size.x - scrollBarWidth && x <= position.x + size.x) 
-			{
-				moveScrollBar(y);
-				isMouseOverScrollBar = true;
-			}
-			else if (x >= position.x && x <= position.x + size.x)
-			{
-				moveScrollBar(y);
-				isMouseOverScrollBar = false;
-
-				if (mouseButtonDown && selectionStart >= 0)
-				{
-					isMouseOverScrollBar = false;
-					cursorIndex = selectionEnd = findIndex(x - position.x, y - position.y);
-					if (cursorIndex < 0)
-						cursorIndex = 0;
-					else if (cursorIndex > characters.length)
-						cursorIndex = characters.length;
-				}
-			}
-			else
-				isMouseOverScrollBar = false;
+            if (mouseButtonDown && selectionStart >= 0)
+            {
+                cursorIndex = selectionEnd = findIndex(x - position.x, y - position.y);
+                if (cursorIndex < 0)
+                    cursorIndex = 0;
+                else if (cursorIndex > characters.length)
+                    cursorIndex = characters.length;
+            }
 		}
-		else if (mouseButtonDown && hasSelection())
+		else if (mouseButtonDown && hasSelection() && !inScrollBounds(x, y))
 		{
 			beginScrollOver = true;
-			isMouseOverScrollBar = false;
 		}
-		else
-			isMouseOverScrollBar = false;
 	} // mouseMove
 
 	function mouseWheel(steps:Int):Void // mouseWheel
@@ -988,53 +957,32 @@ class TextBox
 
 	function updateScrollBarPosition() // updateScrollBarPosition
 	{
+        if (_scrollBar == null) {
+            return;
+        }
 		var percent = scrollOffset.y / scrollBottom;
-
-		scrollBarCurrentY = percent * (size.y / 2) + position.y;
-
-		if (scrollBarCurrentY < position.y)
-			scrollBarCurrentY = position.y;
-		else if (scrollBarCurrentY > position.y + size.y / 2)
-			scrollBarCurrentY = position.y + size.y / 2;
-		
+		_scrollBar.value = percent * (size.y / 2);
 	} // updateScrollBarPosition
 
 	function checkScrollBar() // checkScrollBar
 	{
-		if (!useScrollBar)
-			return;
-
 		var scrollMax = (breaks.length + 1) * font.height(fontSize);
 		scrollBottom = scrollMax - size.y + margin * 2;
 
 		if (scrollMax < size.y)
 		{
-			scrollBarWidth = 0;
+            if (_scrollBar != null) {
+                _scrollBar.visible = false;
+            }
 			scrollBottom = 0;
-			//format();
 		}
 		else
 		{
-			scrollBarWidth = 25;
+            if (_scrollBar != null) {
+                _scrollBar.visible = true;
+            }
 		}
 	} // checkScrollBar
-
-	function moveScrollBar(y:Int) // moveScrollBar
-	{
-		if (isMouseDownScrollBar)
-		{
-			scrollBarCurrentY = y - scrollBarLastY;
-
-			if (scrollBarCurrentY < position.y)
-				scrollBarCurrentY = position.y;
-			else if (scrollBarCurrentY > size.y / 2 + position.y)
-				scrollBarCurrentY = size.y / 2 + position.y;
-			
-			var percent = (scrollBarCurrentY - position.y) / (size.y / 2);
-			scrollOffset.y = percent * scrollBottom;
-		}
-	} // moveScrollBar
-
 
 	/**
 	* Character/word handling
@@ -1157,6 +1105,15 @@ class TextBox
 		}
 	} // insertCharacter
 
+    private var scrollBarWidth(get, null):Float;
+    private function get_scrollBarWidth():Float {
+        if (_scrollBar == null) {
+            return 0;
+        }
+        return _scrollBar.width;
+    }
+    
+    
 	/**
 	* Formatting functionality
 	**/
