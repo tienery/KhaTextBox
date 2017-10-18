@@ -199,6 +199,7 @@ class TextBox
 	public function setText(value:String) //setText
 	{
 		characters = value.toCharArray();
+        format();
 	} //setText
 
 	public function getText() //getText
