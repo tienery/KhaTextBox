@@ -33,7 +33,6 @@ class TextBox
 	var cursorIndex:Int;
 
 	var anim:Int;
-	var isActive:Bool;
 
 	var selecting:Bool;
 	var selectionStart:Int;
@@ -220,7 +219,7 @@ class TextBox
 
 		g.scissor(Math.round(position.x), Math.round(position.y), Math.round(size.x), Math.round(size.y));
 
-		if ((selectionStart > -1 || selectionEnd > -1) && selectionStart != selectionEnd) 
+		if ((selectionStart > -1 || selectionEnd > -1) && selectionStart != selectionEnd && isActive) 
 		{
 			var startIndex = selectionStart;
 			var endIndex = selectionEnd;
@@ -526,11 +525,18 @@ class TextBox
 		}
 	} // keyUp
 
+    private static var activeTextBox:TextBox = null;
+    private var isActive(get, null):Bool;
+    private function get_isActive():Bool {
+        return (activeTextBox == this);
+    }
+    
 	function mouseDown(button:Int, x:Int, y:Int):Void // mouseDown
 	{
 		mouseButtonDown = true;
         if (inBounds(x, y)) {            
             isActive = true;
+            activeTextBox = this;
             _outOnce = false;
             selectionStart = selectionEnd = findIndex(x - position.x, y - position.y);
 		}
@@ -598,7 +604,7 @@ class TextBox
                     cursorIndex = characters.length;
             }
 		}
-		else if (mouseButtonDown && hasSelection() && !inScrollBounds(x, y))
+		else if (mouseButtonDown && hasSelection() && !inScrollBounds(x, y) && isActive)
 		{
 			beginScrollOver = true;
 		}
@@ -1302,7 +1308,7 @@ class TextBox
             var endInRange = (endIndex >= lineStartIndex && endIndex <= lineEndIndex);
             
             if (startInRange == false && endInRange == false) {
-                if (start >= startIndex && start + end <= endIndex) {
+                if (start >= startIndex && start + end <= endIndex && isActive) {
                     g.color = highlightTextColor;
                 }
                 g.drawCharacters(chars, start, end, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
@@ -1312,7 +1318,9 @@ class TextBox
                 x += font.widthOfCharacters(fontSize, chars, start, startIndex - start);
                 start += startIndex - start;
                 
-                g.color = highlightTextColor;
+                if (isActive) {
+                    g.color = highlightTextColor;
+                }
                 g.drawCharacters(chars, start, endIndex - startIndex, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
 
                 x += font.widthOfCharacters(fontSize, chars, start, endIndex - startIndex);
@@ -1326,10 +1334,14 @@ class TextBox
                 x += font.widthOfCharacters(fontSize, chars, start, startIndex - start);
                 start += startIndex - start;
                 
-                g.color = highlightTextColor;
+                if (isActive) {
+                    g.color = highlightTextColor;
+                }
                 g.drawCharacters(chars, start, lineEndIndex - start, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
             } else if (startInRange == false && endInRange == true) {
-                g.color = highlightTextColor;
+                if (isActive) {
+                    g.color = highlightTextColor;
+                }
                 g.drawCharacters(chars, start, endIndex - start, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
                 
                 x += font.widthOfCharacters(fontSize, chars, start, endIndex - start);
