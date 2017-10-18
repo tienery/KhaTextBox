@@ -603,7 +603,7 @@ class TextBox
 
 	function mouseWheel(steps:Int):Void // mouseWheel
 	{
-		if (multiline)
+		if (multiline && inBounds(_mouseX, _mouseY))
 		{
 			scrollOffset.y += steps * 20;
 			if (scrollOffset.y < scrollTop || (breaks.length + 1) * font.height(fontSize) < size.y)
