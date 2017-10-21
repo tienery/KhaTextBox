@@ -1355,7 +1355,7 @@ class TextBox
                 g.drawCharacters(chars, start, lineEndIndex - start, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
 			}
         } else {
-            g.drawCharacters(chars, start, end, x, y + line * font.height(fontSize) - scrollOffset.y);
+            g.drawCharacters(chars, start, end, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
         }
     } //renderLine
 
