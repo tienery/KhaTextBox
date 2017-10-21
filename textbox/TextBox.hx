@@ -300,7 +300,7 @@ class TextBox
 			renderLine(g, lastBreak, characters.length - lastBreak, position.x + margin + border / 2, position.y + margin + border / 2, line);
 		}
 		
-		if (Std.int(anim / 20) % 2 == 0) 
+		if (Std.int(anim / 20) % 2 == 0 && isActive) 
 		{ // blink caret
 			var line = findCursorLine();
 			var lastBreak = line > 0 ? breaks[line - 1] : 0;
