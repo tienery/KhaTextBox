@@ -337,7 +337,7 @@ class TextBox
 
 		g.disableScissor();
 
-        if (useScrollBar && scrollBottom > 0)
+        if (useScrollBar && scrollBottom > 0 && multiline)
 		{
             _scrollBar.render(g);
         }
@@ -359,7 +359,7 @@ class TextBox
 			beginScrollOver: beginScrollOver,
 			isWordWrapping: wordWrap,
 			isMultiline: multiline,
-			scrollOffsetX: scrollOffset.x
+			scrollOffsetX: scrollOffset.x,
 		};
 
 		for (field in Reflect.fields(values))
@@ -534,8 +534,7 @@ class TextBox
 	function mouseDown(button:Int, x:Int, y:Int):Void // mouseDown
 	{
 		mouseButtonDown = true;
-        if (inBounds(x, y)) {            
-            isActive = true;
+        if (inBounds(x, y)) {
             activeTextBox = this;
             _outOnce = false;
             selectionStart = selectionEnd = findIndex(x - position.x, y - position.y);
@@ -549,7 +548,7 @@ class TextBox
 		if (x >= position.x && x <= position.x + size.x - scrollBarWidth && y >= position.y && y <= position.y + size.y)
 		{
 			_outOnce = false;
-			isActive = true;
+			activeTextBox = this;
 			cursorIndex = findIndex(x - position.x, y - position.y);
 			if (selecting)
 			{
@@ -567,7 +566,7 @@ class TextBox
 		else
 		{
 			if (!hasSelection() || _outOnce)
-				isActive = false;
+				activeTextBox = null;
 			
 			_outOnce = true;
 		}
@@ -1257,6 +1256,7 @@ class TextBox
 			line = breaks.length;
 		}
 		var breakIndex = line > 0 ? breaks[line - 1] : 0;
+
 		var index = breakIndex;
 
         var totalWidth:Float = 0;
