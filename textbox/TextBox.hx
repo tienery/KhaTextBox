@@ -749,7 +749,13 @@ class TextBox
 		var cursorX = font.widthOfCharacters(fontSize, characters, lastBreak, cursorIndex - lastBreak);
 		if (breaks.length > line) {
 			var newBreak = breaks[line];
-			var nextBreak = breaks.length > line + 2 ? breaks[line + 1] : characters.length;
+			var nextBreak = breaks.length > line + 1 ? breaks[line + 1] : characters.length;
+			if (newBreak + 1 == nextBreak)
+			{
+				cursorIndex = newBreak;
+				breakOut = true;
+			}
+
 			for (index in newBreak...nextBreak) {
 				if (breakOut)
 					break;
@@ -793,6 +799,7 @@ class TextBox
 		if (line > 0) {
 			var newBreak = line > 1 ? breaks[line - 2] : 0;
 			var nextBreak = lastBreak;
+			
 			for (index in newBreak...nextBreak) {
 				if (breakOut)
 					break;
@@ -806,9 +813,10 @@ class TextBox
 					breakOut = true;
 				}
 			}
+
 			if (!breakOut)
 			{
-				cursorIndex = nextBreak;
+				cursorIndex = nextBreak - 1 < 0 ? 0 : nextBreak - 1;
 				if (selecting) {
 					selectionEnd = cursorIndex;
 				}
@@ -1264,10 +1272,14 @@ class TextBox
 		var index = breakIndex;
 
         var totalWidth:Float = 0;
-		while (index < characters.length) {
+		var nextBreak = line + 1 > breaks.length ? characters.length : breaks[line + 1];
+		
+		if (index + 1 == nextBreak)
+			return index;
+
+		while (index < nextBreak) {
             var charWidth = font.widthOfCharacters(fontSize, characters, index, 1);
             totalWidth += charWidth;
-			++index;
             if (totalWidth >= x - margin + scrollOffset.x) {
                 var delta = totalWidth - (x - margin) + scrollOffset.x;
                 if (Math.round(delta) >= Math.round(charWidth / 2)) {
@@ -1275,6 +1287,7 @@ class TextBox
                 }
                 break;
             }
+			++index;
 		}
 		return index;
 	} // findIndex
