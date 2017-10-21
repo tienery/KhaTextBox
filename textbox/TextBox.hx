@@ -1381,7 +1381,7 @@ class TextBox
         }
     } //renderLine
 
-	function createString(array: Array<Int>):String //createString
+	function createString(array:Array<Int>):String //createString
 	{
 		var buf = new StringBuf();
 		for (value in array) {
