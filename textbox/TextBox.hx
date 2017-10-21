@@ -1273,13 +1273,23 @@ class TextBox
 
         var totalWidth:Float = 0;
 		var nextBreak = line + 1 > breaks.length ? characters.length : breaks[line + 1];
+
+		var startLine = line > 0 ? breaks[line - 1] : 0;
+		var endLine = line + 1 > breaks.length ? characters.length : breaks[line];
 		
-		if (index + 1 == nextBreak)
-			return index;
+		var lineWidth = font.widthOfCharacters(fontSize, characters, startLine, endLine - startLine);
+		if (x > lineWidth)
+		{
+			if (endLine == characters.length)
+				return endLine;
+			else
+				return endLine - 1;
+		}
 
 		while (index < nextBreak) {
             var charWidth = font.widthOfCharacters(fontSize, characters, index, 1);
             totalWidth += charWidth;
+			++index;
             if (totalWidth >= x - margin + scrollOffset.x) {
                 var delta = totalWidth - (x - margin) + scrollOffset.x;
                 if (Math.round(delta) >= Math.round(charWidth / 2)) {
@@ -1287,7 +1297,6 @@ class TextBox
                 }
                 break;
             }
-			++index;
 		}
 		return index;
 	} // findIndex
