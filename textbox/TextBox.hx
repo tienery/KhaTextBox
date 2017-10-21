@@ -186,8 +186,11 @@ class TextBox
 
 
     private function onScrollBarChange() {
-        var percent = (_scrollBar.value - position.y) / (size.y / 2);
-        scrollOffset.y = _scrollBar.percentValue * scrollBottom;
+        if (useScrollBar)
+		{
+			var percent = (_scrollBar.value - position.y) / (size.y / 2);
+        	scrollOffset.y = _scrollBar.percentValue * scrollBottom;
+		}
     }
     
 	/**
@@ -297,7 +300,7 @@ class TextBox
 			renderLine(g, lastBreak, characters.length - lastBreak, position.x + margin + border / 2, position.y + margin + border / 2, line);
 		}
 		
-		if (Std.int(anim / 20) % 2 == 0 && isActive) 
+		if (Std.int(anim / 20) % 2 == 0) 
 		{ // blink caret
 			var line = findCursorLine();
 			var lastBreak = line > 0 ? breaks[line - 1] : 0;
@@ -965,7 +968,7 @@ class TextBox
 
 	function updateScrollBarPosition() // updateScrollBarPosition
 	{
-        if (_scrollBar == null) {
+        if (!_scrollBar.visible || _scrollBar == null) {
             return;
         }
 		var percent = scrollOffset.y / scrollBottom;
@@ -980,6 +983,7 @@ class TextBox
 		if (scrollMax < size.y)
 		{
             if (_scrollBar != null) {
+				scrollOffset.y = 0;
                 _scrollBar.visible = false;
             }
 			scrollBottom = 0;
