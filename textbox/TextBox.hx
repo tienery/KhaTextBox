@@ -374,6 +374,7 @@ class TextBox
 			totalBreaks: breaks.length,
 			totalCharacters: characters.length,
 			caretIndex: cursorIndex,
+			caretLine: findCursorLine(),
 			selectionStart: selectionStart,
 			selectionEnd: selectionEnd,
 			isActive: isActive,
@@ -542,6 +543,45 @@ class TextBox
 				{
 					selectionStart = selectionEnd = -1;
 				}
+			case Home:
+				var line = findCursorLine();
+				if (line == 0)
+					cursorIndex = 0;
+				else
+				{
+					cursorIndex = breaks[line - 1];
+				}
+
+				if (cursorIndex < 0)
+					cursorIndex = 0;
+				else if (cursorIndex > characters.length)
+					cursorIndex = characters.length;
+			case End:
+				var line = findCursorLine();
+				if (line == breaks.length)
+					cursorIndex = characters.length;
+				else
+					cursorIndex = breaks[line] - 1;
+			case PageUp:
+				var line = findCursorLine();
+				var upLine = line - 20;
+
+				if (upLine < 0)
+					upLine = 0;
+				
+				cursorIndex = upLine == 0 ? upLine : breaks[upLine];
+
+				scrollToCaret();
+			case PageDown:
+				var line = findCursorLine();
+				var downLine = line + 20;
+
+				if (downLine >= breaks.length)
+					downLine = breaks.length - 1;
+				
+				cursorIndex = breaks[downLine];
+				
+				scrollToCaret();
 			default:
 		}
 	} // keyUp
