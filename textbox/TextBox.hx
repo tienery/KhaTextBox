@@ -65,6 +65,7 @@ class TextBox
 	public var multiline(get, set):Bool;
 
 	public var useScrollBar(get, set):Bool;
+
 	public var useTextHighlight:Bool;
 
 	public var font:Font;
@@ -184,15 +185,6 @@ class TextBox
         highlightColor = 0xFF3390FF;
         highlightTextColor = Color.White;
 	} // constructor
-
-
-    private function onScrollBarChange() {
-        if (useScrollBar)
-		{
-			var percent = (_scrollBar.value - position.y) / (size.y / 2);
-        	scrollOffset.y = _scrollBar.percentValue * scrollBottom;
-		}
-    }
     
 	/**
 	* Public functions
@@ -211,6 +203,14 @@ class TextBox
 			result += String.fromCharCode(characters[i]);
 		return result;
 	} //getText
+
+	public function changeScrollBarColors(back:Color, thumbBase:Color, thumbOver:Color, thumbDown:Color)
+	{
+		_scrollBar.backColor = back;
+		_scrollBar.thumbBaseColor = thumbBase;
+		_scrollBar.thumbDownColor = thumbDown;
+		_scrollBar.thumbOverColor = thumbOver;
+	}
 
 	public function render(g:Graphics):Void //render
 	{
@@ -874,7 +874,7 @@ class TextBox
 
 	
 	/**
-	* Scolling functions
+	* Scrolling functions
 	**/
 
 	function scrollToCaret() // scrollToCaret
@@ -919,6 +919,15 @@ class TextBox
 		if (scrollOffset.x < 0)
 			scrollOffset.x = 0;
 	} // scrollToCaret
+
+	function onScrollBarChange() 
+	{
+        if (useScrollBar)
+		{
+			var percent = (_scrollBar.value - position.y) / (size.y / 2);
+        	scrollOffset.y = _scrollBar.percentValue * scrollBottom;
+		}
+    }
 
 	function scroll() // scroll
 	{

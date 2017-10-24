@@ -21,10 +21,19 @@ class ScrollBar
     
     public var onChange:Void->Void = null;
     
+    public var thumbBaseColor:Color;
+    public var thumbOverColor:Color;
+    public var thumbDownColor:Color;
+    public var backColor:Color;
     
     public function new(parent:TextBox)
     {
         _textBox = parent;
+        backColor = Color.fromBytes(40, 40, 40);
+        thumbBaseColor = Color.fromBytes(80, 80, 80);
+        thumbDownColor = Color.fromBytes(20, 20, 20);
+        thumbOverColor = Color.fromBytes(150, 150, 150);
+
         Mouse.get().notify(mouseDown, mouseUp, mouseMove, null, null);
     }
     
@@ -93,14 +102,14 @@ class ScrollBar
             return;
         }
         
-        g.color = Color.fromBytes(40, 40, 40);
+        g.color = backColor;
         g.fillRect(scrollBarX, scrollBarY, scrollBarWidth, scrollBarHeight);           
         
-        var scrollFillColor = Color.fromBytes(80, 80, 80);
+        var scrollFillColor = thumbBaseColor;
         if (_isThumbDown)
-            scrollFillColor = Color.fromBytes(20, 20, 20);
+            scrollFillColor = thumbDownColor;
         else if (_isThumbOver)
-            scrollFillColor = Color.fromBytes(150, 150, 150);
+            scrollFillColor = thumbOverColor;
 
         g.color = scrollFillColor;
         g.fillRect(scrollBarX, thumbY, scrollBarWidth, thumbHeight);           
