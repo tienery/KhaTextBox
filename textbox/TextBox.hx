@@ -270,7 +270,8 @@ class TextBox
 
 		if (breaks.length == 0)
 		{
-			renderLine(g, 0, characters.length, position.x + margin + border / 2 - scrollOffset.x, position.y + margin + border / 2, 0);
+			g.drawCharacters(characters, 0, characters.length, position.x + margin + border / 2 - scrollOffset.x, position.y + margin + border / 2);
+			//renderLine(g, 0, characters.length, position.x + margin + border / 2 - scrollOffset.x, position.y + margin + border / 2, 0);
 		} else
 		{
 			var maxOfLines = Math.ceil(size.y / font.height(fontSize));
@@ -879,6 +880,7 @@ class TextBox
 	function scrollToCaret() // scrollToCaret
 	{
 		var caretPos = getIndexPosition(cursorIndex);
+		trace(caretPos);
 
 		if (multiline)
 		{
@@ -902,6 +904,7 @@ class TextBox
 		
 		var scrollLeft = findMaximumLineWidth();
 
+		trace(scrollOffset.x + size.x - margin * 2);
 		// horizontal scrolling
 		if (caretPos.x > scrollOffset.x + size.x - margin * 2)
 		{
@@ -912,6 +915,7 @@ class TextBox
 			scrollOffset.x = caretPos.x - margin;
 		}
 
+		trace(scrollLeft, scrollLeft - size.x + margin * 2);
 		if (scrollOffset.x > scrollLeft - size.x + margin * 2)
 			scrollOffset.x = scrollLeft - size.x + margin * 2;
 		
@@ -1210,17 +1214,27 @@ class TextBox
 
 		if (breaks.length == 0)
 			return font.widthOfCharacters(fontSize, characters, 0, characters.length);
+		
+		var startX = 0;
+		var endX = 0;
 
 		for (lineBreak in breaks)
 		{
-			var startX = line == 0 ? 0 : lineBreak;
-			var endX = line == 0 ? lineBreak : breaks[line - 1];
+			startX = line == 0 ? 0 : lineBreak;
+			endX = line == 0 ? lineBreak : breaks[line];
 
 			var width = font.widthOfCharacters(fontSize, characters, startX, endX - startX);
 
 			if (width > result)
 				result = width;
+			
+			line++;
 		}
+
+		var width = font.widthOfCharacters(fontSize, characters, endX, characters.length - endX);
+
+		if (width > result)
+			result = width;
 
 		return result;
 	} // findMaximumLineWidth
