@@ -30,6 +30,7 @@ Allow single-line functionality - scroll based on when typing (requires scroll r
 
 ### Issues ###
 - Don't make unneccessary `drawCharacter` calls if the text to render is outside the range of the TextBox. (efficiency)
+Optimise to process hundreds/thousands of lines of text.
 
 ### Desirable Features ###
 Holding shift and clicking somewhere in the TextBox should highlight the text to that index.
