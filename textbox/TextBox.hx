@@ -270,7 +270,7 @@ class TextBox
 
 		if (breaks.length == 0)
 		{
-			g.drawCharacters(characters, 0, characters.length, position.x + margin + border / 2 - scrollOffset.x, position.y + margin + border / 2);
+			renderLine(g, 0, characters.length, position.x + margin + border / 2 - scrollOffset.x, position.y + margin + border / 2, 0);
 		} else
 		{
 			var maxOfLines = Math.ceil(size.y / font.height(fontSize));
@@ -1340,10 +1340,10 @@ class TextBox
                 g.drawCharacters(chars, start, end, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
             } else if (startInRange == true && endInRange == true) {
                 g.drawCharacters(chars, start, startIndex - start, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
-              
+				
                 x += font.widthOfCharacters(fontSize, chars, start, startIndex - start);
                 start += startIndex - start;
-                
+
                 if (isActive) {
                     g.color = highlightTextColor;
                 }
