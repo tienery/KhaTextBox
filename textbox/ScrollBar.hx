@@ -18,6 +18,7 @@ class ScrollBar
     private var _textBox:TextBox;
 	private var _isThumbDown:Bool;
     private var _isThumbOver:Bool;
+    private var _proximity:Float = 100;
     
     public var onChange:Void->Void = null;
     
@@ -55,8 +56,14 @@ class ScrollBar
     
     function mouseMove(x:Int, y:Int, mx:Int, my:Int):Void {
         _isThumbOver = (hitTest(x, y) == HitResult.THUMB);
-        if (_isThumbOver && _isThumbDown && _mouseDownY > -1) {
-            value = y - scrollBarY - _mouseDownY;
+        if (_isThumbDown && _mouseDownY > -1) 
+        {
+            var left = scrollBarX - _proximity;
+            var right = scrollBarX + _proximity;
+            if (x >= left && x < right)
+            {
+                value = y - scrollBarY - _mouseDownY;
+            }
         }
     }
     
