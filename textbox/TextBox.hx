@@ -67,6 +67,8 @@ class TextBox
 	public var useScrollBar(get, set):Bool;
 
 	public var useTextHighlight:Bool;
+	public var usePassword:Bool;
+	public var passwordChar:Int;
 
 	public var font:Font;
 	public var fontSize:Int;
@@ -152,6 +154,8 @@ class TextBox
 		_mouse = Mouse.get();
 		_mouse.notify(mouseDown, mouseUp, mouseMove, mouseWheel, null);
 
+		usePassword = false;
+		passwordChar = "*".charCodeAt(0);
 		useTextHighlight = wordWrap = multiline = true;
 
 		System.notifyOnCutCopyPaste(cut, copy, paste);
@@ -265,13 +269,20 @@ class TextBox
 			}
 		}
 
+		var password = [ for (i in 0...characters.length) passwordChar ];
+
 		g.color = textColor;
 		g.font = font;
 		g.fontSize = fontSize;
 
 		if (breaks.length == 0)
 		{
-			renderLine(g, 0, characters.length, position.x + margin + border / 2, position.y + margin + border / 2, 0);
+			if (usePassword)
+			{
+				renderLine(g, password, 0, characters.length, position.x + margin + border / 2, position.y + margin + border / 2, 0);
+			}
+			else
+				renderLine(g, characters, 0, characters.length, position.x + margin + border / 2, position.y + margin + border / 2, 0);
 		} else
 		{
 			var maxOfLines = Math.ceil(size.y / font.height(fontSize));
@@ -280,7 +291,7 @@ class TextBox
 			if (topLine != 0) {
                topLine--; 
             }
-			
+
 			var line = topLine;
 			var lastBreak = line > 0 ? breaks[line - 1] : 0;
 
@@ -290,7 +301,7 @@ class TextBox
 			for (i in topLine...bottomLine) 
 			{
 				var lineBreak = breaks[i];
-                renderLine(g, lastBreak, lineBreak - lastBreak, position.x + margin + border / 2, position.y + margin + border / 2, line);
+                renderLine(g, characters, lastBreak, lineBreak - lastBreak, position.x + margin + border / 2, position.y + margin + border / 2, line);
                 
 				lastBreak = lineBreak;
 				++line;
@@ -299,14 +310,19 @@ class TextBox
 			line = breaks.length;
 			lastBreak = breaks[line - 1];
 		
-			renderLine(g, lastBreak, characters.length - lastBreak, position.x + margin + border / 2, position.y + margin + border / 2, line);
+			renderLine(g, characters, lastBreak, characters.length - lastBreak, position.x + margin + border / 2, position.y + margin + border / 2, line);
 		}
 		
 		if (Std.int(anim / 20) % 2 == 0 && isActive) 
 		{ // blink caret
 			var line = findCursorLine();
 			var lastBreak = line > 0 ? breaks[line - 1] : 0;
-			var cursorX = font.widthOfCharacters(fontSize, characters, lastBreak, cursorIndex - lastBreak);
+			var cursorX = 0.0;
+			if (usePassword)
+				cursorX = font.widthOfCharacters(fontSize, password, lastBreak, cursorIndex - lastBreak);
+			else
+				cursorX = font.widthOfCharacters(fontSize, characters, lastBreak, cursorIndex - lastBreak);
+
 			g.color = Color.Black;
 			g.drawLine(position.x + margin + cursorX + border / 2 - scrollOffset.x, position.y + margin + font.height(fontSize) * line - scrollOffset.y, position.x + margin + cursorX + border / 2 - scrollOffset.x, position.y + margin + font.height(fontSize) * (line + 1) - scrollOffset.y, 2);
 		} // blink caret
@@ -1329,9 +1345,8 @@ class TextBox
 	**/
     
     // this can (should) be refactored a little - this is initial implementation / iteration
-    function renderLine(g:Graphics, start:Int, end:Int, x:Float, y:Float, line:Int) //renderLine
+    function renderLine(g:Graphics, chars:Array<Int>, start:Int, end:Int, x:Float, y:Float, line:Int) //renderLine
 	{
-		var chars = characters;
         var startIndex = selectionStart;
         var endIndex = selectionEnd;
         if (endIndex < startIndex) {
