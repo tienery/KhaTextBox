@@ -276,10 +276,11 @@ class TextBox
 		{
 			var maxOfLines = Math.ceil(size.y / font.height(fontSize));
 			var topLine = Std.int((scrollOffset.y / font.height(fontSize)));
-            if (topLine != 0) {
+			var bottomLine = topLine + maxOfLines;
+			if (topLine != 0) {
                topLine--; 
             }
-			var bottomLine = topLine + maxOfLines;
+			
 			var line = topLine;
 			var lastBreak = line > 0 ? breaks[line - 1] : 0;
 
