@@ -65,6 +65,7 @@ class TextBox
 	public var multiline(get, set):Bool;
 
 	public var useScrollBar(get, set):Bool;
+	public var useTextHighlight:Bool;
 
 	public var font:Font;
 	public var fontSize:Int;
@@ -150,7 +151,7 @@ class TextBox
 		_mouse = Mouse.get();
 		_mouse.notify(mouseDown, mouseUp, mouseMove, mouseWheel, null);
 
-		wordWrap = multiline = true;
+		useTextHighlight = wordWrap = multiline = true;
 
 		System.notifyOnCutCopyPaste(cut, copy, paste);
         useScrollBar = true;
@@ -1330,7 +1331,7 @@ class TextBox
         }
 
         g.color = textColor;
-        if (hasSelection()) {
+        if (hasSelection() && useTextHighlight) {
             var lineStartIndex = 0;
             if (line > 0) {
                 lineStartIndex = breaks[line - 1];

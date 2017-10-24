@@ -18,6 +18,7 @@ class Main {
 				textBox.border = 3;
 				textBox.multiline = false;
 				textBox.wordWrap = false;
+				textBox.useTextHighlight = false;
 				System.notifyOnRender(render);
 				Scheduler.addTimeTask(textBox.update, 0, 1 / 60);
 			});
