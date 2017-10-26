@@ -89,7 +89,7 @@ class TextBox
 	{
         if (val) {
             if (_scrollBar == null) {
-                _scrollBar = new ScrollBar(this);
+                _scrollBar = new ScrollBar();
                 _scrollBar.onChange = onScrollBarChange;
             }
         } else {
@@ -188,6 +188,8 @@ class TextBox
         textColor = Color.Black;
         highlightColor = 0xFF3390FF;
         highlightTextColor = Color.White;
+
+		positionScrollbar();
 	} // constructor
     
 	/**
@@ -360,6 +362,8 @@ class TextBox
 
         if (useScrollBar && scrollBottom > 0 && multiline)
 		{
+			positionScrollbar();
+
             _scrollBar.render(g);
         }
 
@@ -400,6 +404,13 @@ class TextBox
 		++anim;
 	} // update
 
+	function positionScrollbar()
+	{
+		_scrollBar.size.x = 25;
+		_scrollBar.size.y = size.y - border / 2;
+		_scrollBar.position.x = position.x + size.x - _scrollBar.size.x - border / 2;
+		_scrollBar.position.y = position.y + border / 2;
+	}
 	
 
 	/**
@@ -1197,7 +1208,7 @@ class TextBox
         if (_scrollBar == null) {
             return 0;
         }
-        return _scrollBar.width;
+        return _scrollBar.size.x;
     }
     
     

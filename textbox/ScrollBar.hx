@@ -1,4 +1,6 @@
 package textbox;
+
+import kha.math.FastVector2 in FV2;
 import kha.Color;
 import kha.graphics2.Graphics;
 import kha.input.Mouse;
@@ -12,10 +14,10 @@ abstract HitResult(Int) from Int to Int {
 
 class ScrollBar
 {
-    public var width:Float = 25;
     public var visible:Bool = true;
+    public var position:FV2;
+    public var size:FV2;
     
-    private var _textBox:TextBox;
 	private var _isThumbDown:Bool;
     private var _isThumbOver:Bool;
     private var _proximity:Float = 100;
@@ -27,15 +29,17 @@ class ScrollBar
     public var thumbDownColor:Color;
     public var backColor:Color;
     
-    public function new(parent:TextBox)
+    public function new()
     {
-        _textBox = parent;
         backColor = Color.fromBytes(40, 40, 40);
         thumbBaseColor = Color.fromBytes(80, 80, 80);
         thumbDownColor = Color.fromBytes(20, 20, 20);
         thumbOverColor = Color.fromBytes(150, 150, 150);
 
         Mouse.get().notify(mouseDown, mouseUp, mouseMove, null, null);
+
+        position = new FV2(0, 0);
+        size = new FV2(0, 0);
     }
     
     private var _mouseDownY:Float = -1;
@@ -43,7 +47,7 @@ class ScrollBar
     {
         _isThumbDown = (hitTest(x, y) == HitResult.THUMB);
         if (_isThumbDown) {
-            _mouseDownY = (y - scrollBarY - value);
+            _mouseDownY = (y - position.y - value);
         } else {
             _mouseDownY = -1;
         }
@@ -58,18 +62,18 @@ class ScrollBar
         _isThumbOver = (hitTest(x, y) == HitResult.THUMB);
         if (_isThumbDown && _mouseDownY > -1) 
         {
-            var left = scrollBarX - _proximity;
-            var right = scrollBarX + _proximity;
+            var left = position.x - _proximity;
+            var right = position.x + _proximity;
             if (x >= left && x < right)
             {
-                value = y - scrollBarY - _mouseDownY;
+                value = y - position.y - _mouseDownY;
             }
         }
     }
     
     public function hitTest(x:Int, y:Int):HitResult {
         var r = HitResult.NONE;
-        if (x >= scrollBarX && x <= scrollBarX + scrollBarWidth && y >= scrollBarY && y <= scrollBarY + scrollBarHeight) {
+        if (x >= position.x && x <= position.x + size.x && y >= position.y && y <= position.y + size.y) {
             r = HitResult.CONTAINER;
             if (y >= thumbY && y <= thumbY + thumbHeight) {
                 r = HitResult.THUMB;
@@ -86,8 +90,8 @@ class ScrollBar
     private function set_value(newValue:Float):Float {
         if (newValue < 0) {
             newValue = 0;
-        } else if (newValue > scrollBarHeight - thumbHeight) {
-            newValue = scrollBarHeight - thumbHeight;
+        } else if (newValue > size.y - thumbHeight) {
+            newValue = size.y - thumbHeight;
         }
         
         if (newValue != _value) {
@@ -101,7 +105,7 @@ class ScrollBar
     
     public var percentValue(get, null):Float;
     private function get_percentValue():Float {
-        return value / (scrollBarHeight - thumbHeight);
+        return value / (size.y - thumbHeight);
     }
     
     public function render(g:Graphics):Void {
@@ -110,7 +114,7 @@ class ScrollBar
         }
         
         g.color = backColor;
-        g.fillRect(scrollBarX, scrollBarY, scrollBarWidth, scrollBarHeight);           
+        g.fillRect(position.x, position.y, size.x, size.y);           
         
         var scrollFillColor = thumbBaseColor;
         if (_isThumbDown)
@@ -119,36 +123,16 @@ class ScrollBar
             scrollFillColor = thumbOverColor;
 
         g.color = scrollFillColor;
-        g.fillRect(scrollBarX, thumbY, scrollBarWidth, thumbHeight);           
-    }
-    
-    private var scrollBarX(get, null):Float;
-    @:noCompletion private function get_scrollBarX():Float {
-        return _textBox.position.x + _textBox.size.x - width + _textBox.border / 2;
-    }
-    
-    private var scrollBarY(get, null):Float;
-    @:noCompletion private function get_scrollBarY():Float {
-        return _textBox.position.y + _textBox.border / 2;
-    }
-    
-    private var scrollBarWidth(get, null):Float;
-    @:noCompletion private function get_scrollBarWidth():Float {
-        return width - _textBox.border;
-    }
-    
-    private var scrollBarHeight(get, null):Float;
-    @:noCompletion private function get_scrollBarHeight():Float {
-        return _textBox.size.y - _textBox.border;
+        g.fillRect(position.x, thumbY, size.x, thumbHeight);           
     }
     
     private var thumbY(get, null):Float;
     @:noCompletion private function get_thumbY():Float {
-        return scrollBarY + value;
+        return position.y + value;
     }
     
     private var thumbHeight(get, null):Float;
     @:noCompletion private function get_thumbHeight():Float {
-        return _textBox.size.y / 2 - _textBox.border;
+        return size.y / 2;
     }
 }
