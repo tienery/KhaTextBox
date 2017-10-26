@@ -10,7 +10,9 @@ import kha.input.Keyboard;
 import kha.input.Mouse;
 import kha.System;
 import kha.Scheduler;
+
 import textbox.ScrollBar.HitResult;
+import textbox.ScrollBar.Orientation;
 
 using kha.StringExtensions;
 
@@ -47,6 +49,8 @@ class TextBox
 	var scrollOffset:FV2;
 	var scrollTop:Float;
 	var scrollBottom:Float;
+	var scrollRight:Float;
+	var scrollLeft:Float;
 	var beginScrollOver:Bool;
 
 	var keyCodeDown:Int;
@@ -84,16 +88,26 @@ class TextBox
 	**/
 
     private var _vScrollBar:ScrollBar = null;
-    function get_useScrollBar() return (_vScrollBar != null);
-    function set_useScrollBar(val) 
+	private var _hScrollBar:ScrollBar = null;
+    function get_useScrollBar() return (_vScrollBar != null && _hScrollBar != null);
+    function set_useScrollBar(val)
 	{
         if (val) {
             if (_vScrollBar == null) {
                 _vScrollBar = new ScrollBar();
-                _vScrollBar.onChange = onScrollBarChange;
+                _vScrollBar.onChange = onVScrollBarChange;
             }
+			if (_hScrollBar == null)
+			{
+				_hScrollBar = new ScrollBar();
+				_hScrollBar.orientation = Orientation.HORIZONTAL;
+				_hScrollBar.onChange = onHScrollBarChange;
+			}
+
+			positionScrollbar();
         } else {
             _vScrollBar = null;
+			_hScrollBar = null;
         }
         format();
         return val;
@@ -139,7 +153,7 @@ class TextBox
 		size = new FV2(w, h);
 		this.font = font;
 		this.fontSize = fontSize;
-		scrollTop = scrollBottom = 0;
+		scrollLeft = scrollRight = scrollTop = scrollBottom = 0;
 		scrollOffset = new FV2(0, 0);
 		anim = 0;
 		characters = [];
@@ -212,10 +226,10 @@ class TextBox
 
 	public function changeScrollBarColors(back:Color, thumbBase:Color, thumbOver:Color, thumbDown:Color)
 	{
-		_vScrollBar.backColor = back;
-		_vScrollBar.thumbBaseColor = thumbBase;
-		_vScrollBar.thumbDownColor = thumbDown;
-		_vScrollBar.thumbOverColor = thumbOver;
+		_hScrollBar.backColor = _vScrollBar.backColor = back;
+		_hScrollBar.thumbBaseColor = _vScrollBar.thumbBaseColor = thumbBase;
+		_hScrollBar.thumbDownColor = _vScrollBar.thumbDownColor = thumbDown;
+		_hScrollBar.thumbOverColor = _vScrollBar.thumbOverColor = thumbOver;
 	}
 
 	public function render(g:Graphics):Void //render
@@ -287,7 +301,11 @@ class TextBox
 				renderLine(g, characters, 0, characters.length, position.x + margin + border / 2, position.y + margin + border / 2, 0);
 		} else
 		{
-			var maxOfLines = Math.ceil(size.y / font.height(fontSize));
+			var gap = 0.0;
+			if (useScrollBar)
+				gap = _hScrollBar.size.y;
+
+			var maxOfLines = Math.ceil(size.y - gap / font.height(fontSize));
 			var topLine = Std.int((scrollOffset.y / font.height(fontSize)));
 			var bottomLine = topLine + maxOfLines;
 			if (topLine != 0) {
@@ -360,11 +378,15 @@ class TextBox
 
 		g.disableScissor();
 
-        if (useScrollBar && scrollBottom > 0 && multiline)
+        if (useScrollBar)
 		{
 			positionScrollbar();
 
-            _vScrollBar.render(g);
+			if (scrollBottom > 0 && multiline)
+				_vScrollBar.render(g);
+			
+			if (scrollRight > 0 && multiline)
+				_hScrollBar.render(g);
         }
 
 		_lastTime = System.time;
@@ -386,6 +408,7 @@ class TextBox
 			isWordWrapping: wordWrap,
 			isMultiline: multiline,
 			scrollOffsetX: scrollOffset.x,
+			scrollOffsetY: scrollOffset.y
 		};
 
 		for (field in Reflect.fields(values))
@@ -403,14 +426,6 @@ class TextBox
 	{
 		++anim;
 	} // update
-
-	function positionScrollbar()
-	{
-		_vScrollBar.size.x = 25;
-		_vScrollBar.size.y = size.y - border / 2;
-		_vScrollBar.position.x = position.x + size.x - _vScrollBar.size.x - border / 2;
-		_vScrollBar.position.y = position.y + border / 2;
-	}
 	
 
 	/**
@@ -613,11 +628,20 @@ class TextBox
 		}
 	} // mouseDown
 
+	private var hScrollBarHeight(get, never):Float;
+	function get_hScrollBarHeight()
+	{
+		if (_hScrollBar == null)
+			return 0.0;
+		
+		return _hScrollBar.size.y; 
+	}
+
 	function mouseUp(button:Int, x:Int, y:Int):Void // mouseUp
 	{
 		mouseButtonDown = false;
 		beginScrollOver = false;
-		if (x >= position.x && x <= position.x + size.x - vScrollBarWidth && y >= position.y && y <= position.y + size.y)
+		if (x >= position.x && x <= position.x + size.x - vScrollBarWidth && y >= position.y && y <= position.y + size.y - hScrollBarHeight)
 		{
 			_outOnce = false;
 			activeTextBox = this;
@@ -644,17 +668,23 @@ class TextBox
 		}
 	} // mouseUp
 
-    private function inBounds(x:Int, y:Int):Bool {
+    private function inBounds(x:Int, y:Int):Bool 
+	{
         var cx = size.x - vScrollBarWidth;
-        return (x >= position.x && x <= position.x + cx && y >= position.y  && y <= position.y + size.y);
+		var cy = size.y - hScrollBarHeight;
+        return (x >= position.x && x <= position.x + cx && y >= position.y && y <= position.y + cy);
     }
 
-    private function inScrollBounds(x:Int, y:Int):Bool {
-        if (_vScrollBar == null || _vScrollBar.visible == false) {
-            return false;
-        }
+    private function inScrollBounds(x:Int, y:Int):Bool 
+	{
+		var result = false;
+        if (_hScrollBar == null && _vScrollBar == null)
+			return false;
+		
+		result = (_vScrollBar.hitTest(x, y) != HitResult.NONE);
+		result = (_hScrollBar.hitTest(x, y) != HitResult.NONE);
         
-        return (_vScrollBar.hitTest(x, y) != HitResult.NONE);
+        return result;
     }
     
 	function mouseMove(x:Int, y:Int, mx:Int, my:Int):Void // mouseMove
@@ -945,6 +975,21 @@ class TextBox
 	* Scrolling functions
 	**/
 
+	function positionScrollbar() // positionScrollbar
+	{
+		_vScrollBar.size.x = 25;
+		_vScrollBar.size.y = size.y - border / 2;
+		_vScrollBar.position.x = position.x + size.x - _vScrollBar.size.x - border / 2;
+		_vScrollBar.position.y = position.y + border / 2;
+
+		var gap = _vScrollBar.visible ? _vScrollBar.size.x : 0;
+
+		_hScrollBar.size.x = size.x - border - gap;
+		_hScrollBar.size.y = 25;
+		_hScrollBar.position.x = position.x + border / 2;
+		_hScrollBar.position.y = position.y + size.y - _hScrollBar.size.y - border / 2;
+	} // positionScrollbar
+
 	function scrollToCaret() // scrollToCaret
 	{
 		var caretPos = getIndexPosition(cursorIndex);
@@ -965,11 +1010,7 @@ class TextBox
 				scrollOffset.y = scrollBottom;
 			else if (scrollOffset.y < 0)
 				scrollOffset.y = 0;
-			
-			updateScrollBarPosition();
 		}
-		
-		var scrollLeft = findMaximumLineWidth();
 
 		// horizontal scrolling
 		if (caretPos.x > scrollOffset.x + size.x - margin * 2)
@@ -981,21 +1022,37 @@ class TextBox
 			scrollOffset.x = caretPos.x - margin;
 		}
 
-		if (scrollOffset.x > scrollLeft - size.x + margin * 2)
-			scrollOffset.x = scrollLeft - size.x + margin * 2;
+		var currentLine = findCursorLine();
+		var firstIndex = currentLine == 0 ? 0 : breaks[currentLine - 1];
+		var lastIndex = currentLine >= breaks.length ? characters.length : breaks[currentLine];
+		var currentLineWidth = font.widthOfCharacters(fontSize, characters, firstIndex, lastIndex - firstIndex);
+
+		if (scrollOffset.x > currentLineWidth - size.x + margin * 2)
+			scrollOffset.x = currentLineWidth - size.x + margin * 2;
 		
 		if (scrollOffset.x < 0)
 			scrollOffset.x = 0;
+		
+		updateScrollBarPosition();
 	} // scrollToCaret
 
-	function onScrollBarChange() 
+	function onVScrollBarChange() 
 	{
         if (useScrollBar)
 		{
-			var percent = (_vScrollBar.value - position.y) / (size.y / 2);
         	scrollOffset.y = _vScrollBar.percentValue * scrollBottom;
 		}
     }
+
+	function onHScrollBarChange()
+	{
+		if (useScrollBar)
+		{
+        	scrollOffset.x = _hScrollBar.percentValue * scrollRight;
+			if (scrollOffset.x == Math.NaN)
+				scrollOffset.x = 0.0;
+		}
+	}
 
 	function scroll() // scroll
 	{
@@ -1034,10 +1091,9 @@ class TextBox
 		{
 			var scroll_step = _mouseX - (position.x + size.x);
 			scrollOffset.x += scroll_step;
-			var maxWidth = findMaximumLineWidth();
 
-			if (scrollOffset.x > maxWidth - size.x + margin * 2)
-				scrollOffset.x = maxWidth - size.x + margin * 2;
+			if (scrollOffset.x > scrollRight)
+				scrollOffset.x = scrollRight;
 			
 			if (scrollOffset.x < 0)
 				scrollOffset.x = 0;
@@ -1054,21 +1110,35 @@ class TextBox
 
 	function updateScrollBarPosition() // updateScrollBarPosition
 	{
-        if (!_vScrollBar.visible || _vScrollBar == null) {
-            return;
+        if (_vScrollBar != null) 
+		{
+			if (_vScrollBar.visible)
+			{
+				var vPercent = scrollOffset.y / scrollBottom;
+				_vScrollBar.value = vPercent * (size.y / 2);
+			}
         }
-		var percent = scrollOffset.y / scrollBottom;
-		_vScrollBar.value = percent * (size.y / 2);
+		
+		if (_hScrollBar != null)
+		{
+			if (_hScrollBar.visible)
+			{
+				var hPercent = scrollOffset.x / scrollRight;
+				_hScrollBar.value = hPercent * (size.x / 2);
+			}
+		}
 	} // updateScrollBarPosition
 
 	function checkScrollBar() // checkScrollBar
 	{
 		var scrollMax = (breaks.length + 1) * font.height(fontSize);
 		scrollBottom = scrollMax - size.y + margin * 2;
+		scrollRight = findMaximumLineWidth() - size.x + margin * 2;
 
 		if (scrollMax < size.y)
 		{
-            if (_vScrollBar != null) {
+            if (_vScrollBar != null) 
+			{
 				scrollOffset.y = 0;
                 _vScrollBar.visible = false;
             }
@@ -1076,9 +1146,27 @@ class TextBox
 		}
 		else
 		{
-            if (_vScrollBar != null) {
+            if (_vScrollBar != null) 
+			{
                 _vScrollBar.visible = true;
             }
+		}
+
+		if (scrollRight < size.x)
+		{
+			if (_hScrollBar != null)
+			{
+				scrollOffset.x = 0;
+				_hScrollBar.visible = false;
+			}
+			scrollRight = 0;
+		}
+		else
+		{
+			if (_hScrollBar != null)
+			{
+				_hScrollBar.visible = true;
+			}
 		}
 	} // checkScrollBar
 
@@ -1203,8 +1291,8 @@ class TextBox
 		}
 	} // insertCharacter
 
-    private var vScrollBarWidth(get, null):Float;
-    private function get_vScrollBarWidth():Float {
+    var vScrollBarWidth(get, null):Float;
+    function get_vScrollBarWidth():Float {
         if (_vScrollBar == null) {
             return 0;
         }
@@ -1388,8 +1476,6 @@ class TextBox
 		}
 		return index;
 	} // findIndex
-
-	
 
 	/**
 	* Sub-rendering routines

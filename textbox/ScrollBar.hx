@@ -6,10 +6,18 @@ import kha.graphics2.Graphics;
 import kha.input.Mouse;
 
 @:enum
-abstract HitResult(Int) from Int to Int {
-    var NONE:Int = 0;
-    var CONTAINER:Int = 1;
-    var THUMB:Int = 2;
+abstract HitResult(Int) from Int to Int 
+{
+    var NONE:Int        = 0;
+    var CONTAINER:Int   = 1;
+    var THUMB:Int       = 2;
+}
+
+@:enum
+abstract Orientation(Int) from Int to Int
+{
+    var VERTICAL    =   0;
+    var HORIZONTAL  =   1;
 }
 
 class ScrollBar
@@ -17,6 +25,7 @@ class ScrollBar
     public var visible:Bool = true;
     public var position:FV2;
     public var size:FV2;
+    public var orientation:Orientation;
     
 	private var _isThumbDown:Bool;
     private var _isThumbOver:Bool;
@@ -40,6 +49,8 @@ class ScrollBar
 
         position = new FV2(0, 0);
         size = new FV2(0, 0);
+
+        orientation = VERTICAL;
     }
     
     private var _mouseDownY:Float = -1;
@@ -47,7 +58,10 @@ class ScrollBar
     {
         _isThumbDown = (hitTest(x, y) == HitResult.THUMB);
         if (_isThumbDown) {
-            _mouseDownY = (y - position.y - value);
+            if (orientation == VERTICAL)
+                _mouseDownY = (y - position.y - value);
+            else
+                _mouseDownY = (x - position.x - value);
         } else {
             _mouseDownY = -1;
         }
@@ -62,11 +76,23 @@ class ScrollBar
         _isThumbOver = (hitTest(x, y) == HitResult.THUMB);
         if (_isThumbDown && _mouseDownY > -1) 
         {
-            var left = position.x - _proximity;
-            var right = position.x + _proximity;
-            if (x >= left && x < right)
+            if (orientation == VERTICAL)
             {
-                value = y - position.y - _mouseDownY;
+                var left = position.x - _proximity;
+                var right = position.x + _proximity;
+                if (x >= left && x < right)
+                {
+                    value = y - position.y - _mouseDownY;
+                }
+            }
+            else
+            {
+                var up = position.y - _proximity;
+                var down = position.y + _proximity;
+                if (y >= up && y < down)
+                {
+                    value = x - position.x - _mouseDownY;
+                }
             }
         }
     }
@@ -75,8 +101,16 @@ class ScrollBar
         var r = HitResult.NONE;
         if (x >= position.x && x <= position.x + size.x && y >= position.y && y <= position.y + size.y) {
             r = HitResult.CONTAINER;
-            if (y >= thumbY && y <= thumbY + thumbHeight) {
-                r = HitResult.THUMB;
+
+            if (orientation == VERTICAL)
+            {
+                if (y >= thumbY && y <= thumbY + thumbHeight)
+                    r = HitResult.THUMB;
+            }
+            else
+            {
+                if (x >= thumbY && x <= thumbY + thumbHeight)
+                    r = HitResult.THUMB;
             }
         }
         return r;
@@ -90,8 +124,18 @@ class ScrollBar
     private function set_value(newValue:Float):Float {
         if (newValue < 0) {
             newValue = 0;
-        } else if (newValue > size.y - thumbHeight) {
-            newValue = size.y - thumbHeight;
+        } else
+        {
+            if (orientation == VERTICAL)
+            {
+                if (newValue > size.y - thumbHeight)
+                    newValue = size.y - thumbHeight;
+            }
+            else
+            {
+                if (newValue > size.x - thumbHeight)
+                    newValue = size.x - thumbHeight;
+            }
         }
         
         if (newValue != _value) {
@@ -105,7 +149,13 @@ class ScrollBar
     
     public var percentValue(get, null):Float;
     private function get_percentValue():Float {
-        return value / (size.y - thumbHeight);
+        var result = 0.0;
+        if (orientation == VERTICAL)
+            result = size.y - thumbHeight;
+        else
+            result = size.x - thumbHeight;
+
+        return value / result;
     }
     
     public function render(g:Graphics):Void {
@@ -114,7 +164,12 @@ class ScrollBar
         }
         
         g.color = backColor;
-        g.fillRect(position.x, position.y, size.x, size.y);           
+        var x = position.x;
+        var y = position.y;
+        var width = size.x;
+        var height = size.y;
+
+        g.fillRect(x, y, width, height);           
         
         var scrollFillColor = thumbBaseColor;
         if (_isThumbDown)
@@ -123,16 +178,25 @@ class ScrollBar
             scrollFillColor = thumbOverColor;
 
         g.color = scrollFillColor;
-        g.fillRect(position.x, thumbY, size.x, thumbHeight);           
+        if (orientation == VERTICAL)
+            g.fillRect(x, thumbY, width, thumbHeight);
+        else
+            g.fillRect(thumbY, y, thumbHeight, height);
     }
     
     private var thumbY(get, null):Float;
     @:noCompletion private function get_thumbY():Float {
-        return position.y + value;
+        if (orientation == VERTICAL)
+            return position.y + value;
+        else
+            return position.x + value;
     }
     
     private var thumbHeight(get, null):Float;
     @:noCompletion private function get_thumbHeight():Float {
-        return size.y / 2;
+        if (orientation == VERTICAL)
+            return size.y / 2;
+        else
+            return size.x / 2;
     }
 }
