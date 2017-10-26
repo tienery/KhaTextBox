@@ -305,7 +305,7 @@ class TextBox
 			if (useScrollBar)
 				gap = _hScrollBar.size.y;
 
-			var maxOfLines = Math.ceil(size.y - gap / font.height(fontSize));
+			var maxOfLines = Math.ceil((size.y - gap) / font.height(fontSize));
 			var topLine = Std.int((scrollOffset.y / font.height(fontSize)));
 			var bottomLine = topLine + maxOfLines;
 			if (topLine != 0) {
