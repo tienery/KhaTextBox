@@ -408,7 +408,9 @@ class TextBox
 			isWordWrapping: wordWrap,
 			isMultiline: multiline,
 			scrollOffsetX: scrollOffset.x,
-			scrollOffsetY: scrollOffset.y
+			scrollOffsetY: scrollOffset.y,
+			totalScrollWidth: size.x + scrollOffset.x - margin * 2,
+			caretPos: getIndexPosition(cursorIndex)
 		};
 
 		for (field in Reflect.fields(values))
@@ -994,6 +996,9 @@ class TextBox
 	{
 		var caretPos = getIndexPosition(cursorIndex);
 
+		_vScrollBar.onChange = null;
+		_hScrollBar.onChange = null;
+
 		if (multiline)
 		{
 			// vertical scrolling
@@ -1012,28 +1017,26 @@ class TextBox
 				scrollOffset.y = 0;
 		}
 
-		// horizontal scrolling
-		if (caretPos.x > scrollOffset.x + size.x - margin * 2)
-		{
-			scrollOffset.x = caretPos.x - size.x + margin * 2;
-		}
-		else if (caretPos.x < scrollOffset.x)
-		{
-			scrollOffset.x = caretPos.x - margin;
-		}
-
 		var currentLine = findCursorLine();
 		var firstIndex = currentLine == 0 ? 0 : breaks[currentLine - 1];
 		var lastIndex = currentLine >= breaks.length ? characters.length : breaks[currentLine];
 		var currentLineWidth = font.widthOfCharacters(fontSize, characters, firstIndex, lastIndex - firstIndex);
 
-		if (scrollOffset.x > currentLineWidth - size.x + margin * 2)
-			scrollOffset.x = currentLineWidth - size.x + margin * 2;
-		
-		if (scrollOffset.x < 0)
-			scrollOffset.x = 0;
+		if (caretPos.x < scrollOffset.x)
+		{
+			scrollOffset.x = caretPos.x - margin;
+			if (scrollOffset.x < 0)
+				scrollOffset.x = 0;
+		}
+		else if (caretPos.x > size.x + scrollOffset.x - margin * 2 && caretPos.x < currentLineWidth)
+		{
+			scrollOffset.x = caretPos.x - size.x + margin * 2;
+		}
 		
 		updateScrollBarPosition();
+
+		_vScrollBar.onChange = onVScrollBarChange;
+		_hScrollBar.onChange = onHScrollBarChange;
 	} // scrollToCaret
 
 	function onVScrollBarChange() 
