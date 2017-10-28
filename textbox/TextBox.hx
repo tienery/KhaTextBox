@@ -626,7 +626,8 @@ class TextBox
         if (inBounds(x, y)) {
             activeTextBox = this;
             _outOnce = false;
-            selectionStart = selectionEnd = findIndex(x - position.x, y - position.y);
+            if (!selecting)
+				selectionStart = selectionEnd = findIndex(x - position.x, y - position.y);
 		}
 	} // mouseDown
 
@@ -652,9 +653,11 @@ class TextBox
 			{
 				selectionEnd = cursorIndex;
 			}
-
-			if (selectionStart == selectionEnd)
-				selectionStart = selectionEnd = -1;
+			else
+			{
+				if (selectionStart == selectionEnd)
+					selectionStart = selectionEnd = -1;
+			}
 
 			if (cursorIndex < 0)
 				cursorIndex = 0;
