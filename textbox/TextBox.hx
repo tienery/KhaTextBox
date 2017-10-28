@@ -1451,23 +1451,15 @@ class TextBox
 		var index = breakIndex;
 
         var totalWidth:Float = 0;
-		var nextBreak = line + 1 > breaks.length ? characters.length : breaks[line + 1];
-
-		var startLine = line > 0 ? breaks[line - 1] : 0;
-		var endLine = line + 1 > breaks.length ? characters.length : breaks[line];
-		
-		var lineWidth = font.widthOfCharacters(fontSize, characters, startLine, endLine - startLine);
-		if (x > lineWidth)
-		{
-			if (endLine == characters.length)
-				return endLine;
-			else
-				return endLine - 1;
-		}
+		var nextBreak = line + 1 > breaks.length ? characters.length : breaks[line];
+		var nextLine = line + 1;
 
 		while (index < nextBreak) {
             var charWidth = font.widthOfCharacters(fontSize, characters, index, 1);
             totalWidth += charWidth;
+			if (findLine(index + 1) == nextLine)
+				break;
+
 			++index;
             if (totalWidth >= x - margin + scrollOffset.x) {
                 var delta = totalWidth - (x - margin) + scrollOffset.x;

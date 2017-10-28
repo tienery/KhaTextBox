@@ -17,7 +17,7 @@ class Main {
 				textBox = new TextBox(50, 50, 400, 400, Assets.fonts.LiberationSans_Regular, 24);
 				textBox.border = 3;
 				textBox.multiline = true;
-				textBox.wordWrap = false;
+				textBox.wordWrap = true;
 				textBox.useTextHighlight = true;
 
 				System.notifyOnRender(render);
