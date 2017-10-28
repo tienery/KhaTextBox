@@ -264,9 +264,9 @@ class TextBox
     		g.color = highlightColor;
 			for (line in startLine...endLine + 1) 
 			{
-				var x1 = position.x + margin + border / 2;
+				var x1 = position.x + margin + border;
 				if (line == startLine) {
-					x1 = position.x + margin + startX + border / 2;
+					x1 = position.x + margin + startX + border;
 				}
 				
 				var lineWidth = 0.0;
@@ -303,7 +303,7 @@ class TextBox
 		{
 			var gap = 0.0;
 			if (useScrollBar)
-				gap = _hScrollBar.size.y;
+				gap = hScrollBarHeight;
 
 			var maxOfLines = Math.ceil((size.y - gap) / font.height(fontSize));
 			var topLine = Std.int((scrollOffset.y / font.height(fontSize)));
@@ -633,7 +633,7 @@ class TextBox
 	private var hScrollBarHeight(get, never):Float;
 	function get_hScrollBarHeight()
 	{
-		if (_hScrollBar == null)
+		if (_hScrollBar == null || !_hScrollBar.visible)
 			return 0.0;
 		
 		return _hScrollBar.size.y; 
