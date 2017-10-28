@@ -241,7 +241,7 @@ class TextBox
 		g.color = borderColor;
 		g.drawRect(position.x, position.y, size.x, size.y, border);
 
-		g.scissor(Math.round(position.x), Math.round(position.y), Math.round(size.x), Math.round(size.y));
+		g.scissor(Math.round(position.x), Math.round(position.y), Math.round(size.x - border / 2), Math.round(size.y - border / 2));
 
 		if ((selectionStart > -1 || selectionEnd > -1) && selectionStart != selectionEnd && isActive) 
 		{
@@ -264,9 +264,9 @@ class TextBox
     		g.color = highlightColor;
 			for (line in startLine...endLine + 1) 
 			{
-				var x1 = position.x + margin + border;
+				var x1 = position.x + margin + border / 2;
 				if (line == startLine) {
-					x1 = position.x + margin + startX + border;
+					x1 = position.x + margin + startX + border / 2;
 				}
 				
 				var lineWidth = 0.0;
@@ -276,7 +276,7 @@ class TextBox
 				else
 					lineWidth = font.widthOfCharacters(fontSize, characters, breaks[line - 1], breaks[line] - breaks[line - 1]);
 				
-				var x2 = position.x + lineWidth + 5 + border / 2;
+				var x2 = position.x + lineWidth + 15 + border / 2;
 				if (line == endLine) {
 					x2 = position.x + margin + endX + border / 2;
 				}
@@ -410,7 +410,8 @@ class TextBox
 			scrollOffsetX: scrollOffset.x,
 			scrollOffsetY: scrollOffset.y,
 			totalScrollWidth: size.x + scrollOffset.x - margin * 2,
-			caretPos: getIndexPosition(cursorIndex)
+			caretPos: getIndexPosition(cursorIndex),
+			scrollRight: scrollRight
 		};
 
 		for (field in Reflect.fields(values))
