@@ -19,6 +19,8 @@ class Main {
 				textBox.multiline = true;
 				textBox.wordWrap = false;
 				textBox.useTextHighlight = true;
+				textBox.underline(0, 20);
+				textBox.underline(40, 80);
 
 				System.notifyOnRender(render);
 				Scheduler.addTimeTask(textBox.update, 0, 1 / 60);

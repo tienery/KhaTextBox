@@ -228,17 +228,14 @@ class TextBox
         
         if (start < 0)
             start = 0;
-		
-		var temp = underlines.copy();
-		underlines = [];
         
-        if (temp.length > 0)
+        if (underlines.length > 0)
         {
             var newFormatRanges = new Array<Range>();
             
-            for (i in 0...temp.length)
+            for (i in 0...underlines.length)
             {
-                var range = temp[i];
+                var range = underlines[i];
                 if ((start > range.end && end > range.start) || (start < range.start && end < range.end))
                 {
                     newFormatRanges.push(range);
@@ -266,7 +263,7 @@ class TextBox
                     if (range.start < end)
                     {
                         range.start = end + 1 > characters.length ? characters.length : end + 1;
-                        range.end = temp[i + 1] != null ? temp[i + 1].start - 1 : characters.length - 1;
+                        range.end = underlines[i + 1] != null ? underlines[i + 1].start - 1 : characters.length - 1;
                     }
                     
                     var leftRange = new Range(range.start, start - 1);
@@ -341,7 +338,6 @@ class TextBox
 			var endLine = findLine(endIndex);
 			var endBreak = endLine > 0 ? breaks[endLine - 1] : 0;
 			var endX = font.widthOfCharacters(fontSize, characters, endBreak, endIndex - endBreak);
-			//g.fillRect(x + margin + startX, y + margin + startLine * font.height(fontSize), 200, (endLine - startLine + 1) * font.height(fontSize));
 			
     		g.color = highlightColor;
 			for (line in startLine...endLine + 1) 
@@ -380,7 +376,9 @@ class TextBox
 				renderLine(g, password, 0, characters.length, position.x + margin + border / 2, position.y + margin + border / 2, 0);
 			}
 			else
+			{
 				renderLine(g, characters, 0, characters.length, position.x + margin + border / 2, position.y + margin + border / 2, 0);
+			}
 		} else
 		{
 			var gap = 0.0;
@@ -481,6 +479,7 @@ class TextBox
 		var values:Dynamic = {
 			totalBreaks: breaks.length,
 			totalCharacters: characters.length,
+			totalUnderlines: underlines.length,
 			caretIndex: cursorIndex,
 			caretLine: findCursorLine(),
 			selectionStart: selectionStart,
@@ -1582,17 +1581,20 @@ class TextBox
             endIndex = temp;
         }
 
+		var lineStartIndex = 0;
+		if (line > 0) {
+			lineStartIndex = breaks[line - 1];
+		}
+		var lineEndIndex = characters.length;
+		if (line < breaks.length) {
+			lineEndIndex = breaks[line];
+		}
+
+		var _x = x - scrollOffset.x;
+		var _y = y + line * font.height(fontSize) - scrollOffset.y;
+
         g.color = textColor;
         if (hasSelection() && useTextHighlight) {
-            var lineStartIndex = 0;
-            if (line > 0) {
-                lineStartIndex = breaks[line - 1];
-            }
-			var lineEndIndex = characters.length;
-            if (line < breaks.length) {
-                lineEndIndex = breaks[line];
-            }
-            
             var startInRange = (startIndex >= lineStartIndex && startIndex <= lineEndIndex);
             var endInRange = (endIndex >= lineStartIndex && endIndex <= lineEndIndex);
             
@@ -1600,47 +1602,48 @@ class TextBox
                 if (start >= startIndex && start + end <= endIndex && isActive) {
                     g.color = highlightTextColor;
                 }
-                g.drawCharacters(chars, start, end, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
+                g.drawCharacters(chars, start, end, _x, _y);
+
             } else if (startInRange == true && endInRange == true) {
-                g.drawCharacters(chars, start, startIndex - start, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
+                g.drawCharacters(chars, start, startIndex - start, _x, _y);
 				
-                x += font.widthOfCharacters(fontSize, chars, start, startIndex - start);
+                _x += font.widthOfCharacters(fontSize, chars, start, startIndex - start);
                 start += startIndex - start;
 
                 if (isActive) {
                     g.color = highlightTextColor;
                 }
-                g.drawCharacters(chars, start, endIndex - startIndex, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
+                g.drawCharacters(chars, start, endIndex - startIndex, _x, _y);
 
-                x += font.widthOfCharacters(fontSize, chars, start, endIndex - startIndex);
+                _x += font.widthOfCharacters(fontSize, chars, start, endIndex - startIndex);
                 start += endIndex - startIndex;
                 
                 g.color = textColor;
-                g.drawCharacters(chars, start, lineEndIndex - start, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
+                g.drawCharacters(chars, start, lineEndIndex - start, _x, _y);
             } else if (startInRange == true && endInRange == false) {
-                g.drawCharacters(chars, start, startIndex - start, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
+                g.drawCharacters(chars, start, startIndex - start, _x, _y);
               
-                x += font.widthOfCharacters(fontSize, chars, start, startIndex - start);
+                _x += font.widthOfCharacters(fontSize, chars, start, startIndex - start);
                 start += startIndex - start;
                 
                 if (isActive) {
                     g.color = highlightTextColor;
                 }
-                g.drawCharacters(chars, start, lineEndIndex - start, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
+                g.drawCharacters(chars, start, lineEndIndex - start, _x, _y);
             } else if (startInRange == false && endInRange == true) {
                 if (isActive) {
                     g.color = highlightTextColor;
                 }
-                g.drawCharacters(chars, start, endIndex - start, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
+                g.drawCharacters(chars, start, endIndex - start, _x, _y);
                 
-                x += font.widthOfCharacters(fontSize, chars, start, endIndex - start);
+                _x += font.widthOfCharacters(fontSize, chars, start, endIndex - start);
                 start += endIndex - start;
                 
                 g.color = textColor;
-                g.drawCharacters(chars, start, lineEndIndex - start, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
+                g.drawCharacters(chars, start, lineEndIndex - start, _x, _y);
 			}
         } else {
-            g.drawCharacters(chars, start, end, x - scrollOffset.x, y + line * font.height(fontSize) - scrollOffset.y);
+            g.drawCharacters(chars, start, end, _x, _y);
         }
     } //renderLine
 
