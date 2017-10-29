@@ -110,6 +110,7 @@ class TextBox
 			_hScrollBar = null;
         }
         format();
+		checkScrollBar();
         return val;
     }
 
@@ -131,6 +132,7 @@ class TextBox
 		}
 
 		format();
+		checkScrollBar();
 
 		return _multiline;
 	}
@@ -141,6 +143,7 @@ class TextBox
 	{
 		_wordWrap = val;
 		format();
+		checkScrollBar();
 		return _wordWrap;
 	}
 
@@ -190,6 +193,7 @@ class TextBox
 			+ "Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.").toCharArray();
 		
 		format();
+		checkScrollBar();
 		#end
 
 		_lastTime = System.time;
@@ -214,6 +218,7 @@ class TextBox
 	{
 		characters = value.toCharArray();
         format();
+		checkScrollBar();
 	} //setText
 
 	public function getText() //getText
@@ -461,6 +466,7 @@ class TextBox
 			cursorIndex = startIndex;
 			selectionStart = selectionEnd = -1;
 			format();
+			checkScrollBar();
 			return data;
 		}
 		else {
@@ -502,8 +508,9 @@ class TextBox
 		for (i in 0...data.length) {
 			characters.insert(cursorIndex, data.charCodeAt(i));
 			++cursorIndex;
-			format();
 		}
+		format();
+		checkScrollBar();
 	} //paste
 
 	function keyDown(code:KeyCode):Void // keyDown
@@ -767,7 +774,7 @@ class TextBox
 					case Backspace:
 						doBackspaceOperation();
 					default:
-						if (isChar(keyCodeDown))
+						if (isAlphanumericOrChar(keyCodeDown))
 							insertCharacter(keyCodeDown);
 				}
 			}
@@ -952,6 +959,7 @@ class TextBox
 				cursorIndex = 0;
 			
 			format();
+			checkScrollBar();
 		}
 
 		scrollToCaret();
@@ -973,6 +981,7 @@ class TextBox
 					characters.splice(cursorIndex, 1);
 				
 				format();
+				checkScrollBar();
 			}
 		}
 
@@ -1266,7 +1275,7 @@ class TextBox
 
 	function isAlphanumericOrChar(char:Int):Bool // isAlphanumericOrChar
 	{
-		return (char >= 33 && char < 126 || char > 127);
+		return (char >= 32 && char < 126 || char > 127 || char == 10);
 	} // isAlphanumericOrChar
 
 	function removeSelection():Void // removeSelection
@@ -1289,6 +1298,7 @@ class TextBox
 		cursorIndex = (selectionStart > selectionEnd ? selectionEnd : selectionStart);
 		selectionStart = selectionEnd = -1;
 		format();
+		checkScrollBar();
 	} // removeSelection
 
 	function insertCharacter(char:Int) // insertCharacter
@@ -1303,6 +1313,7 @@ class TextBox
 			++cursorIndex;
 			selectionStart = selectionEnd = -1;
 			format();
+			checkScrollBar();
 
 			scrollToCaret();
 		}
@@ -1356,8 +1367,6 @@ class TextBox
 				}
 				++i;
 			}
-
-			checkScrollBar();
 		}
 		else if (multiline)
 		{
@@ -1375,8 +1384,6 @@ class TextBox
 				}
 				++i;
 			}
-
-			checkScrollBar();
 		}
 		else
 		{
@@ -1389,18 +1396,18 @@ class TextBox
 	{
 		var result = 0.0;
 
-		var line = 0;
-
 		if (breaks.length == 0)
 			return font.widthOfCharacters(fontSize, characters, 0, characters.length);
 		
 		var startX = 0;
 		var endX = 0;
 
-		for (lineBreak in breaks)
+		var line = 0;
+
+		while (line < breaks.length)
 		{
-			startX = line == 0 ? 0 : lineBreak;
-			endX = line == 0 ? lineBreak : breaks[line];
+			startX = line > 0 ? breaks[line - 1] : 0;
+			endX = line + 1 < breaks.length ? breaks[line] : characters.length;
 
 			var width = font.widthOfCharacters(fontSize, characters, startX, endX - startX);
 
@@ -1409,11 +1416,6 @@ class TextBox
 			
 			line++;
 		}
-
-		var width = font.widthOfCharacters(fontSize, characters, endX, characters.length - endX);
-
-		if (width > result)
-			result = width;
 
 		return result;
 	} // findMaximumLineWidth
