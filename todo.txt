@@ -16,13 +16,12 @@ Refactor break-handling:
   * - Make multiline optional.
   * - If word-wrapping is off and multiline is on, make sure (4) in scroll refactor is enabled.
   * - If word-wrapping is on and multiline is off, word-wrapping should not do anything. 
-  * If multiline is off, pasting content with `\n` should be trimmed and replaced with spaces.
+  * - If multiline is off, pasting content with `\n` should be trimmed and replaced with spaces.
   * - If multiline is off and word-wrapping if off, this should simulate a single-line textbox.
 
 Refactor scrolling functionality:
   * - Convert scrollOffset to a `FastVector2`.
   * - Use `x` and `y` respectively to determine scroll horizontally and vertically.
-  * Instead of hiding scroll-bar and adjusting margin accordingly, keep a fixed scroll-bar width to leave a gap between respective margins to prevent misbehaviour in textbox.
   * Allow Alt+Mouse Wheel to scroll left and right in a multiline scenario with word-wrapping off.
   * - Determine scroll based on exact caret location, and move along accordingly.
 
@@ -33,7 +32,7 @@ Allow single-line functionality - scroll based on when typing (requires scroll r
 Optimise to process hundreds/thousands of lines of text.
 
 ### Desirable Features ###
-Holding shift and clicking somewhere in the TextBox should highlight the text to that index.
+- Holding shift and clicking somewhere in the TextBox should highlight the text to that index.
 
 - Make scrollbar disappear if the text does not need scrolling.
 Undo History

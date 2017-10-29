@@ -411,7 +411,10 @@ class TextBox
 			scrollOffsetY: scrollOffset.y,
 			totalScrollWidth: size.x + scrollOffset.x - margin * 2,
 			caretPos: getIndexPosition(cursorIndex),
-			scrollRight: scrollRight
+			scrollRight: scrollRight,
+			position: position,
+			mouseX: _mouseX,
+			mouseY: _mouseY
 		};
 
 		for (field in Reflect.fields(values))
@@ -1065,6 +1068,10 @@ class TextBox
 	{
 		var x_val = _mouseX < position.x ? 0 : _mouseX - position.x;
 		var y_val = _mouseY < position.y ? 0 : _mouseY - position.y;
+
+		_vScrollBar.onChange = null;
+		_hScrollBar.onChange = null;
+
 		if (multiline)
 		{
 			if (_mouseY < position.y)
@@ -1113,6 +1120,9 @@ class TextBox
 			cursorIndex = characters.length;
 		
 		updateScrollBarPosition();
+
+		_vScrollBar.onChange = onVScrollBarChange;
+		_hScrollBar.onChange = onHScrollBarChange;
 	} // scroll
 
 	function updateScrollBarPosition() // updateScrollBarPosition
