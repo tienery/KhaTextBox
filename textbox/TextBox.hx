@@ -23,6 +23,7 @@ class TextBox
 	* Private fields
 	**/
 
+	var _requiresChange:Bool;
 	var _mouseX:Int;
 	var _mouseY:Int;
 	var _mouse:Mouse;
@@ -110,7 +111,6 @@ class TextBox
 			_hScrollBar = null;
         }
         format();
-		checkScrollBar();
         return val;
     }
 
@@ -132,7 +132,6 @@ class TextBox
 		}
 
 		format();
-		checkScrollBar();
 
 		return _multiline;
 	}
@@ -143,7 +142,6 @@ class TextBox
 	{
 		_wordWrap = val;
 		format();
-		checkScrollBar();
 		return _wordWrap;
 	}
 
@@ -177,6 +175,8 @@ class TextBox
 
 		System.notifyOnCutCopyPaste(cut, copy, paste);
         useScrollBar = true;
+
+		_requiresChange = true;
         
 		#if test
 		characters = ("Lorem ipsum dolor sit amet, consetetur sadipscing elitr, "
@@ -193,7 +193,6 @@ class TextBox
 			+ "Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.").toCharArray();
 		
 		format();
-		checkScrollBar();
 		#end
 
 		_lastTime = System.time;
@@ -218,7 +217,6 @@ class TextBox
 	{
 		characters = value.toCharArray();
         format();
-		checkScrollBar();
 	} //setText
 
 	public function getText() //getText
@@ -247,6 +245,13 @@ class TextBox
 		g.drawRect(position.x, position.y, size.x, size.y, border);
 
 		g.scissor(Math.round(position.x), Math.round(position.y), Math.round(size.x - border / 2), Math.round(size.y - border / 2));
+
+		if (_requiresChange)
+		{
+			checkScrollBar();
+
+			_requiresChange = false;
+		}
 
 		if ((selectionStart > -1 || selectionEnd > -1) && selectionStart != selectionEnd && isActive) 
 		{
@@ -466,7 +471,6 @@ class TextBox
 			cursorIndex = startIndex;
 			selectionStart = selectionEnd = -1;
 			format();
-			checkScrollBar();
 			return data;
 		}
 		else {
@@ -509,8 +513,8 @@ class TextBox
 			characters.insert(cursorIndex, data.charCodeAt(i));
 			++cursorIndex;
 		}
+
 		format();
-		checkScrollBar();
 	} //paste
 
 	function keyDown(code:KeyCode):Void // keyDown
@@ -959,7 +963,6 @@ class TextBox
 				cursorIndex = 0;
 			
 			format();
-			checkScrollBar();
 		}
 
 		scrollToCaret();
@@ -981,7 +984,6 @@ class TextBox
 					characters.splice(cursorIndex, 1);
 				
 				format();
-				checkScrollBar();
 			}
 		}
 
@@ -1298,7 +1300,6 @@ class TextBox
 		cursorIndex = (selectionStart > selectionEnd ? selectionEnd : selectionStart);
 		selectionStart = selectionEnd = -1;
 		format();
-		checkScrollBar();
 	} // removeSelection
 
 	function insertCharacter(char:Int) // insertCharacter
@@ -1313,7 +1314,6 @@ class TextBox
 			++cursorIndex;
 			selectionStart = selectionEnd = -1;
 			format();
-			checkScrollBar();
 
 			scrollToCaret();
 		}
@@ -1390,6 +1390,8 @@ class TextBox
 			breaks = [];
 			characters = getText().split("\n").join("").split("\r").join("").toCharArray();
 		}
+
+		_requiresChange = true;
 	} // format
 
 	function findMaximumLineWidth():Float // findMaximumLineWidth
@@ -1404,10 +1406,15 @@ class TextBox
 
 		var line = 0;
 
-		while (line < breaks.length)
+		while (line < breaks.length + 1)
 		{
 			startX = line > 0 ? breaks[line - 1] : 0;
-			endX = line + 1 < breaks.length ? breaks[line] : characters.length;
+			endX = 0;
+
+			if (line + 1 > breaks.length)
+				endX = characters.length;
+			else
+				endX = breaks[line];
 
 			var width = font.widthOfCharacters(fontSize, characters, startX, endX - startX);
 
