@@ -33,6 +33,13 @@ class TextBox
 
 	var characters:Array<Int>;
 	var breaks:Array<Int>;
+	var underlines:Array<Range>;
+	var underlining:Bool;
+
+	var colorIndices:Array<Int>;
+	var colors:Array<Int>;
+	var currentColor:Color;
+
 	var cursorIndex:Int;
 
 	var anim:Int;
@@ -161,6 +168,7 @@ class TextBox
 		beginScrollOver = false;
 		// cursorIndexCache = [];
 		breaks = [];
+		underlines = [];
 		disableInsert = showEditingCursor = wordSelection = selecting = false;
 		selectionStart = selectionEnd = -1;
 		Keyboard.get().notify(keyDown, keyUp, keyPress);
@@ -213,6 +221,70 @@ class TextBox
 	* Public functions
 	**/
     
+	public function underline(start:Int, end:Int) // underline
+	{
+		if (start > characters.length || (end == 0 && start > 0))
+            end = characters.length;
+        
+        if (start < 0)
+            start = 0;
+		
+		var temp = underlines.copy();
+		underlines = [];
+        
+        if (temp.length > 0)
+        {
+            var newFormatRanges = new Array<Range>();
+            
+            for (i in 0...temp.length)
+            {
+                var range = temp[i];
+                if ((start > range.end && end > range.start) || (start < range.start && end < range.end))
+                {
+                    newFormatRanges.push(range);
+                    continue;
+                }
+                
+                var formatRange = new Range(start, end);
+                if (!(range.start < end && range.end > start) || start == 0)
+                {
+                    newFormatRanges.push(formatRange);
+                    
+                    if (range.start < end)
+                    {
+                        range.start = end + 1 > characters.length ? characters.length : end + 1;
+                    }
+                    else if (range.end > start)
+                    {
+                        range.end = start - 1 < 0 ? 0 : start - 1;
+                    }
+                    
+                    newFormatRanges.push(range);
+                }
+                else
+                {
+                    if (range.start < end)
+                    {
+                        range.start = end + 1 > characters.length ? characters.length : end + 1;
+                        range.end = temp[i + 1] != null ? temp[i + 1].start - 1 : characters.length - 1;
+                    }
+                    
+                    var leftRange = new Range(range.start, start - 1);
+                    newFormatRanges.push(leftRange);
+                    newFormatRanges.push(formatRange);
+                    newFormatRanges.push(range);
+                }
+            }
+            
+            underlines = newFormatRanges;
+        }
+        else
+        {
+            var formatRange = new Range(start, end);
+            underlines.push(formatRange);
+        }
+	} // underline
+
 	public function setText(value:String) //setText
 	{
 		characters = value.toCharArray();
