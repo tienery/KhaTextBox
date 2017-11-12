@@ -122,14 +122,14 @@ class TextBox
     }
 
 	var _multiline:Bool;
-	var _prevHeight:Float;
+	var _prevHeight:Float = -1;
 	function get_multiline() return _multiline;
 	function set_multiline(val)
 	{
 		_multiline = val;
 		if (val)
 		{
-			if (_prevHeight != null)
+			if (_prevHeight != -1)
 				size.y = _prevHeight;
 		}
 		else
