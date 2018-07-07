@@ -64,7 +64,7 @@ class TextBox
 	var keyCodeDown:Int;
 	var ctrl:Bool;
 
-	static inline var margin:Float = 4;
+	public var margin:Float = 4;
 
 	/**
 	* Public fields
@@ -90,6 +90,25 @@ class TextBox
     public var textColor:Int = -1;
     public var highlightColor:Int = -1;
     public var highlightTextColor:Int = -1;
+
+	private var _customEventHandling:Bool = false;
+	public var customEventHandling(get, set):Bool;
+	function get_customEventHandling() return _customEventHandling;
+	function set_customEventHandling(val)
+	{
+		if (val)
+		{
+			Keyboard.get(0).remove(keyDown, keyUp, keyPress);
+			Mouse.get(0).remove(mouseDown, mouseUp, mouseMove, mouseWheel);
+		}
+		else
+		{
+			Keyboard.get(0).notify(keyDown, keyUp, keyPress);
+			Mouse.get(0).notify(mouseDown, mouseUp, mouseMove, mouseWheel);
+		}
+
+		return _customEventHandling = val;
+	}
 
 	/**
 	* Public properties
@@ -173,7 +192,7 @@ class TextBox
 		selectionStart = selectionEnd = -1;
 		mouseButtonDown = false;
 		keyCodeDown = -1;
-		_mouse = Mouse.get();
+		_mouse = Mouse.get(0);
 
 		usePassword = false;
 		passwordChar = "*".charCodeAt(0);
@@ -181,6 +200,7 @@ class TextBox
 
 		System.notifyOnCutCopyPaste(cut, copy, paste);
         useScrollBar = true;
+		customEventHandling = false;
 
 		_requiresChange = true;
         
