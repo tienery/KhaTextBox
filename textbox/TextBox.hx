@@ -64,7 +64,7 @@ class TextBox
 	var keyCodeDown:Int;
 	var ctrl:Bool;
 
-	static inline var margin:Float = 10;
+	static inline var margin:Float = 4;
 
 	/**
 	* Public fields
@@ -171,11 +171,9 @@ class TextBox
 		underlines = [];
 		disableInsert = showEditingCursor = wordSelection = selecting = false;
 		selectionStart = selectionEnd = -1;
-		Keyboard.get().notify(keyDown, keyUp, keyPress);
 		mouseButtonDown = false;
 		keyCodeDown = -1;
 		_mouse = Mouse.get();
-		_mouse.notify(mouseDown, mouseUp, mouseMove, mouseWheel, null);
 
 		usePassword = false;
 		passwordChar = "*".charCodeAt(0);
@@ -285,6 +283,9 @@ class TextBox
 	public function setText(value:String) //setText
 	{
 		characters = value.toCharArray();
+		if (cursorIndex > characters.length)
+			cursorIndex = characters.length;
+		
         format();
 	} //setText
 
@@ -427,7 +428,7 @@ class TextBox
 			g.drawLine(position.x + margin + cursorX + border / 2 - scrollOffset.x, position.y + margin + font.height(fontSize) * line - scrollOffset.y, position.x + margin + cursorX + border / 2 - scrollOffset.x, position.y + margin + font.height(fontSize) * (line + 1) - scrollOffset.y, 2);
 		} // blink caret
 
-		if (Std.int(anim / 5) % 2 == 0 && beginScrollOver && isActive) 
+		if (Std.int(anim / 5) % 2 == 0 && beginScrollOver && isActive)
 		{
 			scroll();
 		}
@@ -471,7 +472,7 @@ class TextBox
 
 		_lastTime = System.time;
 
-		#if debug
+		#if 0
 		g.color = Color.White;
 		g.fontSize = 12;
 		var lineY = 2.0;
@@ -588,7 +589,7 @@ class TextBox
 		format();
 	} //paste
 
-	function keyDown(code:KeyCode):Void // keyDown
+	public function keyDown(code:KeyCode):Void // keyDown
 	{
 		if (!isActive)
 			return;
@@ -627,7 +628,7 @@ class TextBox
         }, .6);
 	} // keyDown
 
-	function keyUp(code:KeyCode):Void // keyUp
+	public function keyUp(code:KeyCode):Void // keyUp
 	{
 		if (!isActive)
 			return;
@@ -701,12 +702,12 @@ class TextBox
 	} // keyUp
 
     private static var activeTextBox:TextBox = null;
-    private var isActive(get, null):Bool;
-    private function get_isActive():Bool {
+    public var isActive(get, null):Bool;
+    function get_isActive():Bool {
         return (activeTextBox == this);
     }
     
-	function mouseDown(button:Int, x:Int, y:Int):Void // mouseDown
+	public function mouseDown(button:Int, x:Int, y:Int):Void // mouseDown
 	{
 		mouseButtonDown = true;
         if (inBounds(x, y)) {
@@ -726,7 +727,7 @@ class TextBox
 		return _hScrollBar.size.y; 
 	}
 
-	function mouseUp(button:Int, x:Int, y:Int):Void // mouseUp
+	public function mouseUp(button:Int, x:Int, y:Int):Void // mouseUp
 	{
 		mouseButtonDown = false;
 		beginScrollOver = false;
@@ -752,7 +753,7 @@ class TextBox
 		}
 		else
 		{
-			if (!hasSelection() || _outOnce)
+			if ((!hasSelection() || _outOnce) && activeTextBox == this)
 				activeTextBox = null;
 			
 			_outOnce = true;
@@ -778,7 +779,7 @@ class TextBox
         return result;
     }
     
-	function mouseMove(x:Int, y:Int, mx:Int, my:Int):Void // mouseMove
+	public function mouseMove(x:Int, y:Int, mx:Int, my:Int):Void // mouseMove
 	{
 		_mouseX = x;
 		_mouseY = y;
@@ -802,7 +803,7 @@ class TextBox
 		}
 	} // mouseMove
 
-	function mouseWheel(steps:Int):Void // mouseWheel
+	public function mouseWheel(steps:Int):Void // mouseWheel
 	{
 		if (multiline && inBounds(_mouseX, _mouseY))
 		{
@@ -816,13 +817,15 @@ class TextBox
 		}
 	} // mouseWheel
 
-	function keyPress(character:String):Void // keyPress
+	public function keyPress(character:String):Void // keyPress
 	{
 		if (!isActive || ctrl)
 			return;
 
 		var char = character.charCodeAt(0);
-		insertCharacter(char);
+		if (!(!multiline && char == KeyCode.Return))
+			insertCharacter(char);
+		
 		keyCodeDown = char;
 	} // keyPress
 
