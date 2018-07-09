@@ -1,11 +1,13 @@
 # KhaTextBox
 A TextBox with selection, scrolling and cut/copy/paste functionality built on-top of Kha.
 
-Please see the `TODO.txt` for the list of items complete/incomplete. If you wish to contribute, please update the TODO for any features you have implemented. Items that are complete are indicated with the hypen at the start.
+The most recent patch fixes an issue with using and rendering multiple TextBox's, including correctly hiding/showing the mouse cursor when hovering over them. However, you will need to call the following at the end of each frame for the mouse behaviour to work properly, otherwise the mouse will remain hidden.
 
-Currently, there are several items in the TODO requiring refactoring, including scrolling and break-behaviour to correctly implement single-line functionality.
+```haxe
+TextBox.mouseOverTextBox = false;
+```
 
 ## Project's Future
-I do not intend to implement all the functionality you see in the TODO list, at least not in terms of those items available in the Desirable Features section. The reason for this is because I intend to migrate much of this code-base into the [Twinspire](https://github.com/twinspire/Twinspire) video game engine, and working on two of essentially the same project is rather pointless. Twinspire does not use the object-oriented approach that most game engines use except on the occasion where it is necessary.
+The TextBox is considered complete. Most, if not all, of the features that exist are suitable for game development. If you wish to add your own features, I would suggest forking the project. This TextBox project will continue to receive bug fixes and optimisations where necessary when found to be an issue.
 
-If there is a feature you want implemented, especially those under the Desirable Features list, and it has not been implemented yet, feel free to make a pull request.
+If you run into any issues using this TextBox, you may submit an issue and it will be resolved duly.
