@@ -10,4 +10,4 @@ TextBox.mouseOverTextBox = false;
 ## Project's Future
 The TextBox is considered complete. Most, if not all, of the features that exist are suitable for game development. If you wish to add your own features, I would suggest forking the project. This TextBox project will continue to receive bug fixes and optimisations where necessary when found to be an issue.
 
-If you run into any issues using this TextBox, you may submit an issue and it will be resolved duly.
+If you run into any problems using this TextBox, you may submit an issue and it will be resolved duly.
