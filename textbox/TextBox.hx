@@ -576,6 +576,8 @@ class TextBox
 				wordSelection = true;
 				disableInsert = true;
 				ctrl = true;
+			case Return:
+				insertCharacter(code);
 			default:
 		}
 
@@ -810,6 +812,8 @@ class TextBox
 						doDeleteOperation();
 					case Backspace:
 						doBackspaceOperation();
+					case Return:
+						insertCharacter(code);
 					default:
 						if (isAlphanumericOrChar(keyCodeDown))
 							insertCharacter(keyCodeDown);
