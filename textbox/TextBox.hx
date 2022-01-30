@@ -93,6 +93,12 @@ class TextBox
     public var highlightColor:Int = -1;
     public var highlightTextColor:Int = -1;
 
+	/**
+	 * A callback to execute when the Return key is pressed on the
+	 * keyboard in a single-line scenario.
+	 */
+	public var onReturn:() -> Void;
+
 	private var _customEventHandling:Bool = false;
 	public var customEventHandling(get, set):Bool;
 	function get_customEventHandling() return _customEventHandling;
@@ -585,6 +591,9 @@ class TextBox
 				disableInsert = true;
 				ctrl = true;
 			case Return:
+				if ((code == 10 || code == 13) && onReturn != null)
+					onReturn();
+
 				insertCharacter(code);
 			default:
 		}
@@ -794,7 +803,7 @@ class TextBox
 		var char = character.charCodeAt(0);
 		if (!multiline)
 		{
-			if (isChar(char))
+			if (isPrintableChar(char))
 				insertCharacter(char);
 		}
 		else
@@ -1321,6 +1330,11 @@ class TextBox
 		}
 		return result;
 	} // getStartOfWord
+
+	function isPrintableChar(char:Int):Bool // isPrintableChar
+	{
+		return (char >= 32 && char < 127) || (char >= 128 && char < 255);
+	} // isPrintableChar
 
 	function isChar(char:Int):Bool // isChar
 	{
