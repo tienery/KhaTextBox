@@ -33,6 +33,7 @@ class TextBox
 
 	var characters:Array<Int>;
 	var breaks:Array<Int>;
+	var lines:Array<LineInfo>;
 
 	var cursorIndex:Int;
 
@@ -57,6 +58,11 @@ class TextBox
 
 	var keyCodeDown:Int;
 	var ctrl:Bool;
+
+	// formatting variables
+	var lastCursorIndex:Int;
+	var newCursorIndex:Int;
+	var newCursorCharCode:Int;
 
 	public static var mouseOverTextBox:Bool;
 
@@ -182,7 +188,9 @@ class TextBox
 		characters = [];
 		beginScrollOver = false;
 		// cursorIndexCache = [];
-		breaks = [];
+		// breaks = [];
+		lines = [];
+
 		disableInsert = showEditingCursor = wordSelection = selecting = false;
 		selectionStart = selectionEnd = -1;
 		mouseButtonDown = false;
@@ -784,8 +792,15 @@ class TextBox
 			return;
 
 		var char = character.charCodeAt(0);
-		if (!(!multiline && char == KeyCode.Return))
+		if (!multiline)
+		{
+			if (isChar(char))
+				insertCharacter(char);
+		}
+		else
+		{
 			insertCharacter(char);
+		}
 		
 		keyCodeDown = char;
 	} // keyPress
@@ -1343,12 +1358,18 @@ class TextBox
 	{
 		if (!disableInsert)
 		{
+			if (!multiline && (char == 10 || char == 13))
+				return;
+
 			if (hasSelection())
 				removeSelection();
 
 			anim = 0;
+			lastCursorIndex = cursorIndex;
+			newCursorCharCode = char;
 			characters.insert(cursorIndex, char);
 			++cursorIndex;
+			newCursorIndex = cursorIndex;
 			selectionStart = selectionEnd = -1;
 			format();
 
@@ -1373,6 +1394,9 @@ class TextBox
 	{
 		if (multiline && wordWrap)
 		{
+			var currentLine = findCursorLine();
+
+
 			var lastChance = -1;
 			breaks = [];
 			var lastBreak = 0;
@@ -1430,6 +1454,27 @@ class TextBox
 
 		_requiresChange = true;
 	} // format
+
+	function formatLine(line:Int):Bool // formatLine
+	{
+		var nextLineRequiresCheck = false;
+		if (line > -1 && line < lines.length)
+		{
+			var lineInfo = lines[line];
+			//
+			// Let's begin by taking the current cursor position on the line we are inserting on, 
+			// take the width of the entire line BEFORE insertion and AFTER insertion and compare 
+			// against the inner width of the text box.
+			//
+
+			var currentTotalWidth = font.widthOfCharacters(fontSize, characters, lineInfo.start, lineInfo.end);
+			var insertedCharWidth = font.widthOfCharacters(fontSize, [newCursorCharCode], 0, 1);
+			var newTotalWidth = currentTotalWidth + insertedCharWidth;
+			//if (newTotalWidth > )
+		}
+
+		return nextLineRequiresCheck;
+	} // formatLine
 
 	function findMaximumLineWidth():Float // findMaximumLineWidth
 	{
