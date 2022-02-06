@@ -574,9 +574,11 @@ class TextBox
 			case Right:
 				doRightOperation();
 			case Down:
-				doDownOperation();
+				if (multiline)
+					doDownOperation();
 			case Up:
-				doUpOperation();
+				if (multiline)
+					doUpOperation();
 			case Backspace:
 				doBackspaceOperation();
 			case Delete:
