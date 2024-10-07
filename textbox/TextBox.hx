@@ -92,6 +92,7 @@ class TextBox
     public var textColor:Int = -1;
     public var highlightColor:Int = -1;
     public var highlightTextColor:Int = -1;
+	public var visible:Bool = false;
 
 	/**
 	 * A callback to execute when the Return key is pressed on the
@@ -206,6 +207,7 @@ class TextBox
 		usePassword = false;
 		passwordChar = "*".charCodeAt(0);
 		useTextHighlight = wordWrap = multiline = true;
+		visible = true;
 
 		System.notifyOnCutCopyPaste(cut, copy, paste);
         useScrollBar = true;
@@ -276,6 +278,17 @@ class TextBox
 	public function render(g:Graphics):Void //render
 	{
 		_dt = System.time - _lastTime;
+
+		if (!mouseOverTextBox && visible)
+		{
+			mouseOverTextBox = inBounds(_mouseX, _mouseY);
+		}
+
+		_mouse.setSystemCursor(mouseOverTextBox && visible ? MouseCursor.Text : MouseCursor.Default);
+
+		if (!visible) {
+			return;
+		}
 
 		g.color = backColor;
 		g.fillRect(position.x, position.y, size.x, size.y);
@@ -399,36 +412,7 @@ class TextBox
 		if (Std.int(anim / 5) % 2 == 0 && beginScrollOver && isActive)
 		{
 			scroll();
-		}
-
-		if (!mouseOverTextBox)
-		{
-			mouseOverTextBox = inBounds(_mouseX, _mouseY);
-		}
-
-		if (mouseOverTextBox)
-		{
-			_mouse.hideSystemCursor();
-			var fontHeight = font.height(fontSize);
-			var top = _mouseY - fontHeight / 2;
-			var bottom = _mouseY + fontHeight / 2;
-            var size = fontHeight / 8;
-            if (size < 1) {
-                size = 1;
-            }
-            if (size % .5 != size) {
-                size = Std.int(size) + .5;
-            }
-
-			var left = _mouseX - size;
-			var right = _mouseX + size;
-			g.color = Color.Black;
-			g.drawLine(_mouseX, top, _mouseX, bottom);
-			g.drawLine(left, top, right, top);
-			g.drawLine(left, bottom, right, bottom);
-		}
-		else
-			_mouse.showSystemCursor();
+		}	
 
 		g.disableScissor();
 
